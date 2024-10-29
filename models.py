@@ -369,6 +369,10 @@ class EDMLoss:
         elif self.dist == 'Plane':
             n = (torch.rand_like(y) - 0.5) / np.sqrt(1/12) * sigma[:, None]
             n[:, 2] = 0
+        elif self.dist == 'Line':
+            n = (torch.rand_like(y) - 0.5) / np.sqrt(1/12) * sigma[:, None]
+            n[:, 2] = 0
+            n[:, 1] = 0
         elif self.dist == "Mesh":
             assert init_noise is not None
             n = init_noise * sigma[:, None]

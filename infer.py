@@ -39,6 +39,10 @@ elif args.target == 'Uniform':
 elif args.target == 'Plane':
     noise = (torch.rand(args.N, 3).cuda() - 0.5) / np.sqrt(1/12)
     noise[:, 2] = 0
+elif args.target == 'Plane':
+    noise = (torch.rand(args.N, 3).cuda() - 0.5) / np.sqrt(1/12)
+    noise[:, 2] = 0
+    noise[:, 1] = 0
 elif args.target == 'Mesh':
     assert args.noise_mesh is not None
     noise, _ = trimesh.sample.sample_surface(trimesh.load(args.noise_mesh), args.N)
