@@ -111,6 +111,13 @@ def main(args):
     cudnn.benchmark = True
     cudnn.deterministic=True
 
+    # The flag below controls whether to allow TF32 on matmul. This flag defaults to False
+    # in PyTorch 1.12 and later.
+    torch.backends.cuda.matmul.allow_tf32 = True
+
+    # The flag below controls whether to allow TF32 on cuDNN. This flag defaults to True.
+    torch.backends.cudnn.allow_tf32 = True
+    
     # dataset_train = build_shape_surface_occupancy_dataset('train', args=args)
     # dataset_val = build_shape_surface_occupancy_dataset('val', args=args)
 
