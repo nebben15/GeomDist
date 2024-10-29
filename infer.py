@@ -16,14 +16,21 @@ random.seed(0)
 
 parser = argparse.ArgumentParser('Inference', add_help=False)
 parser.add_argument('--pth', default='output/lamp_cube/checkpoint-0.pth', type=str)
+parser.add_argument('--texture', action='store_true')
 parser.add_argument('--target', default='Gaussian', type=str)
 parser.add_argument('--N', default=1000000, type=int)
+parser.add_argument('--num-steps', default=64, type=int)
+parser.set_defaults(texture=False)
 
 args = parser.parse_args()
 
-model = EDMPrecond().cuda()
+if args.texture:
+    model = EDMPrecond(channels=6).cuda()
+else:
+    model = EDMPrecond().cuda()
+
 model.load_state_dict(torch.load(args.pth, map_location='cpu')['model'], strict=True)
-# noise = torch.randn(1000000, 3).cuda()
+
 if args.target == 'Gaussian':
     noise = torch.randn(args.N, 3).cuda()
 elif args.target == 'Uniform':
@@ -31,11 +38,21 @@ elif args.target == 'Uniform':
 else:
     raise NotImplementedError
 
-sample = model.sample(batch_seeds=noise, num_steps=64)
-# print(sample.shape)
+if args.texture:
+    color = (torch.rand(args.N, 3).cuda() - 0.5) / np.sqrt(1/12)
+    noise = torch.cat([noise, color], dim=1)
+
+sample = model.sample(batch_seeds=noise, num_steps=args.num_steps)
 
 # sample.export('ouput_a.obj')
-trimesh.PointCloud(sample.detach().cpu().numpy()).export('sample.ply')
+if args.texture:
+    sample = sample.detach().cpu().numpy()
+    vertices, colors = sample[:, :3], sample[:, 3:]
+    colors = (colors + 1) / 2 * 255.0
+    colors = np.concatenate([colors, np.ones_like(colors[:, 0:1]) * 255.0], axis=1).astype(np.uint8) # alpha channel
+    trimesh.PointCloud(vertices, colors).export('sample.ply')
+else:
+    trimesh.PointCloud(sample.detach().cpu().numpy()).export('sample.ply')
 
 # noise = torch.randn(1000000, 3).cuda()
 # for sigma in range(1, 33):
