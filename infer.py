@@ -20,6 +20,7 @@ parser.add_argument('--texture', action='store_true')
 parser.add_argument('--target', default='Gaussian', type=str)
 parser.add_argument('--N', default=1000000, type=int)
 parser.add_argument('--num-steps', default=64, type=int)
+parser.add_argument('--noise_mesh', default=None, type=str)
 parser.set_defaults(texture=False)
 
 args = parser.parse_args()
@@ -35,6 +36,10 @@ if args.target == 'Gaussian':
     noise = torch.randn(args.N, 3).cuda()
 elif args.target == 'Uniform':
     noise = (torch.rand(args.N, 3).cuda() - 0.5) / np.sqrt(1/12)
+elif args.target == 'Mesh':
+    assert args.noise_mesh is not None
+    noise, _ = trimesh.sample.sample_surface(trimesh.load(args.noise_mesh), args.N)
+    noise = torch.from_numpy(noise).float().cuda()
 else:
     raise NotImplementedError
 
