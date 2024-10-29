@@ -121,7 +121,6 @@ def main(args):
 
     neural_rendering_resolution = 128
     if args.data_path.endswith('.obj'):
-        dataset_train = Points(args.data_path)
         data_loader_train = {
             'obj_file': args.data_path,
             'batch_size': args.batch_size,
