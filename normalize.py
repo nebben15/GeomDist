@@ -1,3 +1,5 @@
+import argparse 
+
 import trimesh
 
 import math
@@ -6,7 +8,13 @@ import glob
 
 import numpy as np
 
-model = trimesh.load('/home/zhanb0b/projects/surface_diffusion/shapes/spot_UV.obj', process=False)
+parser = argparse.ArgumentParser('Inference', add_help=False)
+parser.add_argument('--path', required=True, type=str)
+parser.add_argument('--output', required=True, type=str)
+
+args = parser.parse_args()
+
+model = trimesh.load(args.path, process=False)
 # model = trimesh.util.concatenate([trimesh.load(m, process=False) for m in glob.glob('shapes/wukong/*.stl')])
 # print(model.vertices.max(axis=0), model.vertices.min(axis=0))
 
@@ -38,4 +46,4 @@ model = normalize_meshes(model)
 
 # model.apply_transform(rot_matrix)
 
-model.export('shapes/spot_uv_normalized.obj')
+model.export(args.output)
