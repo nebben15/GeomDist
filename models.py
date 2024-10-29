@@ -357,7 +357,10 @@ class EDMLoss:
         # n = torch.from_numpy(self.points[ind]).to(y.device) * sigma[:, None] / 0.4
 
         if self.dist == 'Gaussian':
-            n = torch.randn_like(y) * sigma[:, None]
+            n = torch.randn_like(y[:, :3]) * sigma[:, None]
+            if y.shape[1] != 3:
+                c = (torch.rand_like(y[:, 3:]) - 0.5) / np.sqrt(1/12) * sigma[:, None]
+                n = torch.cat([n, c], dim=1)
         elif self.dist == 'Uniform':
             n = (torch.rand_like(y) - 0.5) / np.sqrt(1/12) * sigma[:, None]
             # print(((torch.rand_like(y) - 0.5) / np.sqrt(1/12)).mean(), ((torch.rand_like(y) - 0.5) / np.sqrt(1/12)).std())
