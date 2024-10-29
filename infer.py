@@ -47,17 +47,28 @@ if args.texture:
     color = (torch.rand(args.N, 3).cuda() - 0.5) / np.sqrt(1/12)
     noise = torch.cat([noise, color], dim=1)
 
-sample = model.sample(batch_seeds=noise, num_steps=args.num_steps)
+sample, intermediate_steps = model.sample(batch_seeds=noise, num_steps=args.num_steps)
 
 # sample.export('ouput_a.obj')
 if args.texture:
     sample = sample.detach().cpu().numpy()
     vertices, colors = sample[:, :3], sample[:, 3:]
-    colors = (colors + 1) / 2 * 255.0
+    colors = (colors * np.sqrt(1/12) + 0.5) * 255.0
     colors = np.concatenate([colors, np.ones_like(colors[:, 0:1]) * 255.0], axis=1).astype(np.uint8) # alpha channel
     trimesh.PointCloud(vertices, colors).export('sample.ply')
+
+    for i, s in enumerate(intermediate_steps):
+        vertices, colors = s[:, :3], s[:, 3:]
+        colors = (colors * np.sqrt(1/12) + 0.5) * 255.0
+        colors = np.concatenate([colors, np.ones_like(colors[:, 0:1]) * 255.0], axis=1).astype(np.uint8) # alpha channel
+
+        trimesh.PointCloud(vertices, colors).export('sample-{:03d}.ply'.format(i+1))
+
 else:
     trimesh.PointCloud(sample.detach().cpu().numpy()).export('sample.ply')
+
+    for i, s in enumerate(intermediate_steps):
+        trimesh.PointCloud(s).export('sample-{:03d}.ply'.format(i+1))
 
 # noise = torch.randn(1000000, 3).cuda()
 # for sigma in range(1, 33):

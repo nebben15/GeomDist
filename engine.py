@@ -65,7 +65,7 @@ def train_one_epoch(model: torch.nn.Module,
 
             samples, _, colors = trimesh.sample.sample_surface(mesh,  2048*64*4*64, sample_color=True)
             colors = colors[:, :3] # remove alpha
-            colors = (colors.astype(np.float32) / 255.0 - 0.5) * 2 # [-1, 1]
+            colors = (colors.astype(np.float32) / 255.0 - 0.5)  / np.sqrt(1/12) # [-1, 1]
             samples = np.concatenate([samples, colors], axis=1)
         else:
             samples, _ = trimesh.sample.sample_surface(mesh,  2048*64*4*64)
@@ -101,6 +101,8 @@ def train_one_epoch(model: torch.nn.Module,
                 ind = np.random.default_rng().choice(noise.shape[0], batch_size, replace=True)
                 init_noise = noise[ind]
                 init_noise = torch.from_numpy(init_noise).float().to(device, non_blocking=True)
+            else:
+                init_noise = None
             loss = criterion(model, xyz, init_noise=init_noise)
             
         loss_value = loss.item()

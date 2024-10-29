@@ -302,6 +302,8 @@ def edm_sampler(
     # Main sampling loop.
     x_next = latents.to(torch.float64) * t_steps[0]
     # trimesh.PointCloud((x_next / t_steps[0]).detach().cpu().numpy()).export('sample-{:02d}.ply'.format(0))
+    outputs = []
+    outputs.append((x_next / t_steps[0]).detach().cpu().numpy())
     print(t_steps[0])
     for i, (t_cur, t_next) in enumerate(zip(t_steps[:-1], t_steps[1:])): # 0, ..., N-1
         print(t_cur, t_next)
@@ -326,8 +328,8 @@ def edm_sampler(
             x_next = x_hat + (t_next - t_hat) * (0.5 * d_cur + 0.5 * d_prime)
         # trimesh.PointCloud((x_next / (1+t_next**2).sqrt()).detach().cpu().numpy()).export('sample-{:02d}.ply'.format(i+1))
         # print((x_next / (1+t_next**2).sqrt()).mean(), (x_next / (1+t_next**2).sqrt()).std())
-
-    return x_next
+        outputs.append((x_next / (1+t_next**2).sqrt()).detach().cpu().numpy())
+    return x_next, outputs
 
 
 class EDMLoss:
