@@ -60,6 +60,9 @@ def get_args_parser():
     parser.add_argument('--data_path', default='shapes/Jellyfish_lamp_part_A__B_normalized.obj', type=str,
                         help='dataset path')
 
+    parser.add_argument('--texture_path', default=None, type=str,
+                        help='dataset path')
+    
     parser.add_argument('--output_dir', default='./output/',
                         help='path where to save, empty for no saving')
     parser.add_argument('--log_dir', default='./output/',
@@ -117,7 +120,7 @@ def main(args):
 
     # The flag below controls whether to allow TF32 on cuDNN. This flag defaults to True.
     torch.backends.cudnn.allow_tf32 = True
-    
+
     # dataset_train = build_shape_surface_occupancy_dataset('train', args=args)
     # dataset_val = build_shape_surface_occupancy_dataset('val', args=args)
 
@@ -132,6 +135,7 @@ def main(args):
             'obj_file': args.data_path,
             'batch_size': args.batch_size,
             'epoch_size': 512,
+            'texture_path': args.texture_path,
         }
     else:
         dataset_train = Points(args.data_path)
@@ -166,7 +170,7 @@ def main(args):
 
     criterion = EDMLoss(dist=args.target)
     
-    model = models.__dict__[args.model]()
+    model = models.__dict__[args.model](channels=3 if args.texture_path is None else 6)
     model.to(device)
 
     model_without_ddp = model

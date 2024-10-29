@@ -24,6 +24,8 @@ from einops import rearrange, repeat
 
 import trimesh
 
+from PIL import Image
+
 # from models import EDMLoss
 
 def train_one_epoch(model: torch.nn.Module,
@@ -51,7 +53,22 @@ def train_one_epoch(model: torch.nn.Module,
     if isinstance(data_loader, dict):
         obj_file = data_loader['obj_file']
         batch_size = data_loader['batch_size']
-        samples, _ = trimesh.sample.sample_surface(trimesh.load(obj_file),  2048*64*4*64)
+
+        mesh = trimesh.load(obj_file)
+
+        if data_loader['texture_path'] is not None:
+            img = Image.open('shapes/spot_by_keenan.png')
+            material = trimesh.visual.texture.SimpleMaterial(image=img)
+            assert mesh.visual.uv is not None
+            texture = trimesh.visual.TextureVisuals(mesh.visual.uv, image=img, material=material)
+            mesh = trimesh.Trimesh(vertices=mesh.vertices, faces=mesh.faces, visual=texture, process=False)
+
+            samples, _, colors = trimesh.sample.sample_surface(mesh,  2048*64*4*64, sample_color=True)
+            colors = colors[:, :3] # remove alpha
+            colors = (colors.astype(np.float32) / 255.0 - 0.5) * 2 # [-1, 1]
+            samples = np.concatenate([samples, colors], axis=1)
+        else:
+            samples, _ = trimesh.sample.sample_surface(mesh,  2048*64*4*64)
 
         # samples, _ = trimesh.sample.sample_surface(trimesh.load('shapes/Jellyfish_lamp_part_A__B_normalized.obj'),  2048*64*4*64)
         samples = samples.astype(np.float32)# - 0.12

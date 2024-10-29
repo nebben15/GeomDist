@@ -6,8 +6,8 @@ import glob
 
 import numpy as np
 
-# model = trimesh.load('/home/zhanb0b/projects/surface_diffusion/shapes/wukong/wukong_SubTool1.stl', process=False)
-model = trimesh.util.concatenate([trimesh.load(m, process=False) for m in glob.glob('shapes/wukong/*.stl')])
+model = trimesh.load('/home/zhanb0b/projects/surface_diffusion/shapes/spot_UV.obj', process=False)
+# model = trimesh.util.concatenate([trimesh.load(m, process=False) for m in glob.glob('shapes/wukong/*.stl')])
 # print(model.vertices.max(axis=0), model.vertices.min(axis=0))
 
 # print(model.bounding_box.centroid)
@@ -30,12 +30,12 @@ def normalize_meshes(mesh):
 
 model = normalize_meshes(model)
 
-angle = math.pi / 2
-direction = [1, 0, 0]
-center = [0, 0, 0]
+# angle = math.pi / 2
+# direction = [1, 0, 0]
+# center = [0, 0, 0]
 
-rot_matrix = trimesh.transformations.rotation_matrix(angle, direction, center)
+# rot_matrix = trimesh.transformations.rotation_matrix(angle, direction, center)
 
-model.apply_transform(rot_matrix)
+# model.apply_transform(rot_matrix)
 
-model.export('shapes/wukong.obj')
+model.export('shapes/spot_uv_normalized.obj')

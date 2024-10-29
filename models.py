@@ -99,7 +99,7 @@ class MPConv(torch.nn.Module):
         return torch.nn.functional.conv2d(x, w, padding=(w.shape[-1]//2,))
 
 class PointEmbed(nn.Module):
-    def __init__(self, hidden_dim=48, dim=128):
+    def __init__(self, hidden_dim=48, dim=128, other_dim=0):
         super().__init__()
 
         assert hidden_dim % 6 == 0
@@ -117,7 +117,7 @@ class PointEmbed(nn.Module):
         self.register_buffer('basis', e)  # 3 x 16
 
         # self.mlp = nn.Linear(self.embedding_dim+3, dim)/
-        self.mlp = MPConv(self.embedding_dim+3, dim, kernel=[])
+        self.mlp = MPConv(self.embedding_dim+3+other_dim, dim, kernel=[])
 
     @staticmethod
     def embed(input, basis):
@@ -127,8 +127,16 @@ class PointEmbed(nn.Module):
         return embeddings
     
     def forward(self, input):
-        # input: B x N x 3
-        embed = self.mlp(torch.cat([self.embed(input, self.basis), input], dim=1)) # N x C
+        # input: N x 3
+        if input.shape[1] != 3:
+            input, others = input[:, :3], input[:, 3:]
+        else:
+            others = None
+        
+        if others is None:
+            embed = self.mlp(torch.cat([self.embed(input, self.basis), input], dim=1)) # N x C
+        else:
+            embed = self.mlp(torch.cat([self.embed(input, self.basis), input, others], dim=1))
         return embed
 
 
@@ -146,7 +154,7 @@ class Network(nn.Module):
         self.emb_fourier = MPFourier(hidden_size)
         self.emb_noise = MPConv(hidden_size, hidden_size, kernel=[])
 
-        self.x_embedder = PointEmbed(dim=hidden_size)
+        self.x_embedder = PointEmbed(dim=hidden_size, other_dim=channels-3)
 
         self.gains = nn.ParameterList([
             torch.nn.Parameter(torch.zeros([])) for _ in range(6)
