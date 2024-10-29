@@ -1,3 +1,5 @@
+import argparse 
+
 import torch
 
 import trimesh
@@ -12,10 +14,23 @@ np.random.seed(0)
 import random
 random.seed(0)
 
+parser = argparse.ArgumentParser('Inference', add_help=False)
+parser.add_argument('--pth', default='output/lamp_cube/checkpoint-0.pth', type=str)
+parser.add_argument('--target', default='Gaussian', type=str)
+parser.add_argument('--N', default=1000000, type=int)
+
+args = parser.parse_args()
+
 model = EDMPrecond().cuda()
-model.load_state_dict(torch.load('output/lamp_cube/checkpoint-0.pth', map_location='cpu')['model'], strict=True)
+model.load_state_dict(torch.load(args.pth, map_location='cpu')['model'], strict=True)
 # noise = torch.randn(1000000, 3).cuda()
-noise = (torch.rand(1000000, 3).cuda() - 0.5) / np.sqrt(1/12)
+if args.target == 'Gaussian':
+    noise = torch.randn(args.N, 3).cuda()
+elif args.target == 'Uniform':
+    noise = (torch.rand(args.N, 3).cuda() - 0.5) / np.sqrt(1/12)
+else:
+    raise NotImplementedError
+
 sample = model.sample(batch_seeds=noise, num_steps=64)
 # print(sample.shape)
 

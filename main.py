@@ -24,7 +24,7 @@ from points import Points
 
 
 def get_args_parser():
-    parser = argparse.ArgumentParser('Autoencoder', add_help=False)
+    parser = argparse.ArgumentParser('Train', add_help=False)
     parser.add_argument('--batch_size', default=2048*64*2, type=int,
                         help='Batch size per GPU (effective batch size is batch_size * accum_iter * # gpus')
     parser.add_argument('--epochs', default=1000, type=int)
