@@ -1,0 +1,11 @@
+*.ipynb
+*.ply
+.ipynb_checkpoints
+test*.*
+*.stl
+vis.py
+*.obj
+__pycache__
+*_dataset
+output/
+backup.py
