@@ -62,7 +62,10 @@ def get_args_parser():
 
     parser.add_argument('--texture_path', default=None, type=str,
                         help='dataset path')
-    
+
+    parser.add_argument('--noise_mesh', default=None, type=str,
+                        help='dataset path')
+     
     parser.add_argument('--output_dir', default='./output/',
                         help='path where to save, empty for no saving')
     parser.add_argument('--log_dir', default='./output/',
@@ -137,6 +140,10 @@ def main(args):
             'epoch_size': 512,
             'texture_path': args.texture_path,
         }
+        if args.noise_mesh is not None:
+            data_loader_train['noise_mesh'] = args.noise_mesh
+        else:
+            data_loader_train['noise_mesh'] = None
     else:
         dataset_train = Points(args.data_path)
 

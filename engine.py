@@ -57,7 +57,7 @@ def train_one_epoch(model: torch.nn.Module,
         mesh = trimesh.load(obj_file)
 
         if data_loader['texture_path'] is not None:
-            img = Image.open('shapes/spot_by_keenan.png')
+            img = Image.open(data_loader['texture_path'])
             material = trimesh.visual.texture.SimpleMaterial(image=img)
             assert mesh.visual.uv is not None
             texture = trimesh.visual.TextureVisuals(mesh.visual.uv, image=img, material=material)
@@ -69,6 +69,11 @@ def train_one_epoch(model: torch.nn.Module,
             samples = np.concatenate([samples, colors], axis=1)
         else:
             samples, _ = trimesh.sample.sample_surface(mesh,  2048*64*4*64)
+
+        if data_loader['noise_mesh'] is not None:
+            noise, _ = trimesh.sample.sample_surface(trimesh.load(data_loader['noise_mesh']),  2048*64*4*64)
+        else:
+            noise = None
 
         # samples, _ = trimesh.sample.sample_surface(trimesh.load('shapes/Jellyfish_lamp_part_A__B_normalized.obj'),  2048*64*4*64)
         samples = samples.astype(np.float32)# - 0.12
@@ -92,7 +97,11 @@ def train_one_epoch(model: torch.nn.Module,
             xyz = batch.to(device, non_blocking=True)
 
         with torch.cuda.amp.autocast(enabled=False):
-            loss = criterion(model, xyz)
+            if noise is not None:
+                ind = np.random.default_rng().choice(noise.shape[0], batch_size, replace=True)
+                init_noise = noise[ind]
+                init_noise = torch.from_numpy(init_noise).float().to(device, non_blocking=True)
+            loss = criterion(model, xyz, init_noise=init_noise)
             
         loss_value = loss.item()
 

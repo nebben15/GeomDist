@@ -343,7 +343,7 @@ class EDMLoss:
 
         self.dist = dist
 
-    def __call__(self, net, inputs, labels=None, augment_pipe=None):
+    def __call__(self, net, inputs, labels=None, augment_pipe=None, init_noise=None):
         rnd_normal = torch.randn([inputs.shape[0],], device=inputs.device)
 
         sigma = (rnd_normal * self.P_std + self.P_mean).exp()
@@ -364,6 +364,9 @@ class EDMLoss:
         elif self.dist == 'Uniform':
             n = (torch.rand_like(y) - 0.5) / np.sqrt(1/12) * sigma[:, None]
             # print(((torch.rand_like(y) - 0.5) / np.sqrt(1/12)).mean(), ((torch.rand_like(y) - 0.5) / np.sqrt(1/12)).std())
+        elif self.dist == "Mesh":
+            assert init_noise is not None
+            n = init_noise * sigma[:, None]
         else:
             raise NotImplementedError
 
