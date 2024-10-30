@@ -76,6 +76,11 @@ def train_one_epoch(model: torch.nn.Module,
                 n = torch.nn.functional.normalize(n, dim=1)
                 samples = n / np.sqrt(1/3)
                 samples = samples.numpy()
+            if data_loader['primitive'] == 'plane':
+                samples = torch.rand(2048*64*4*64, 3) - 0.5
+                samples[:, 2] = 0
+                samples = (samples - 0) / np.sqrt(2/9*2*0.5**3)
+                samples = samples.numpy()
             else:
                 raise NotImplementedError
 
