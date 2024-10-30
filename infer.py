@@ -14,6 +14,13 @@ np.random.seed(0)
 import random
 random.seed(0)
 
+# The flag below controls whether to allow TF32 on matmul. This flag defaults to False
+# in PyTorch 1.12 and later.
+torch.backends.cuda.matmul.allow_tf32 = True
+
+# The flag below controls whether to allow TF32 on cuDNN. This flag defaults to True.
+torch.backends.cudnn.allow_tf32 = True
+
 parser = argparse.ArgumentParser('Inference', add_help=False)
 parser.add_argument('--pth', default='output/lamp_cube/checkpoint-0.pth', type=str)
 parser.add_argument('--texture', action='store_true')
