@@ -144,7 +144,19 @@ def main(args):
             data_loader_train['noise_mesh'] = args.noise_mesh
         else:
             data_loader_train['noise_mesh'] = None
-    else:
+    elif 'sphere' or 'plane' in args.data_path:
+        data_loader_train = {
+            'obj_file': None,
+            'primitive': args.data_path,
+            'batch_size': args.batch_size,
+            'epoch_size': 512,
+            'texture_path': args.texture_path,
+        }
+        if args.noise_mesh is not None:
+            data_loader_train['noise_mesh'] = args.noise_mesh
+        else:
+            data_loader_train['noise_mesh'] = None
+    elif args.data_path.endswith('.ply'):
         dataset_train = Points(args.data_path)
 
         if True:  # args.distributed:
@@ -157,6 +169,8 @@ def main(args):
             # sampler_val = torch.utils.data.SequentialSampler(dataset_val)
         else:
             sampler_train = torch.utils.data.RandomSampler(dataset_train)
+    else:
+        raise NotImplementedError
 
 
         data_loader_train = torch.utils.data.DataLoader(
@@ -210,7 +224,7 @@ def main(args):
     start_time = time.time()
     max_iou = 0.0
     for epoch in range(args.start_epoch, args.epochs):
-        if args.distributed and not args.data_path.endswith('.obj'):
+        if args.distributed and args.data_path.endswith('.ply'):
             data_loader_train.sampler.set_epoch(epoch)
 
         train_stats = train_one_epoch(

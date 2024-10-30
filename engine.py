@@ -54,21 +54,30 @@ def train_one_epoch(model: torch.nn.Module,
         obj_file = data_loader['obj_file']
         batch_size = data_loader['batch_size']
 
-        mesh = trimesh.load(obj_file)
+        if obj_file is not None:
+            mesh = trimesh.load(obj_file)
+            if data_loader['texture_path'] is not None:
+                img = Image.open(data_loader['texture_path'])
+                material = trimesh.visual.texture.SimpleMaterial(image=img)
+                assert mesh.visual.uv is not None
+                texture = trimesh.visual.TextureVisuals(mesh.visual.uv, image=img, material=material)
+                mesh = trimesh.Trimesh(vertices=mesh.vertices, faces=mesh.faces, visual=texture, process=False)
 
-        if data_loader['texture_path'] is not None:
-            img = Image.open(data_loader['texture_path'])
-            material = trimesh.visual.texture.SimpleMaterial(image=img)
-            assert mesh.visual.uv is not None
-            texture = trimesh.visual.TextureVisuals(mesh.visual.uv, image=img, material=material)
-            mesh = trimesh.Trimesh(vertices=mesh.vertices, faces=mesh.faces, visual=texture, process=False)
+                samples, _, colors = trimesh.sample.sample_surface(mesh,  2048*64*4*64, sample_color=True)
+                colors = colors[:, :3] # remove alpha
+                colors = (colors.astype(np.float32) / 255.0 - 0.5)  / np.sqrt(1/12) # [-1, 1]
+                samples = np.concatenate([samples, colors], axis=1)
+            else:
+                samples, _ = trimesh.sample.sample_surface(mesh,  2048*64*4*64)
 
-            samples, _, colors = trimesh.sample.sample_surface(mesh,  2048*64*4*64, sample_color=True)
-            colors = colors[:, :3] # remove alpha
-            colors = (colors.astype(np.float32) / 255.0 - 0.5)  / np.sqrt(1/12) # [-1, 1]
-            samples = np.concatenate([samples, colors], axis=1)
         else:
-            samples, _ = trimesh.sample.sample_surface(mesh,  2048*64*4*64)
+            if data_loader['primitive'] == 'sphere':
+                n = torch.randn(2048*64*4*64, 3)
+                n = torch.nn.functional.normalize(n, dim=1)
+                samples = n / np.sqrt(1/3)
+                samples = samples.numpy()
+            else:
+                raise NotImplementedError
 
         if data_loader['noise_mesh'] is not None:
             noise, _ = trimesh.sample.sample_surface(trimesh.load(data_loader['noise_mesh']),  2048*64*4*64)
