@@ -44,7 +44,7 @@ if args.target == 'Gaussian':
 elif args.target == 'Uniform':
     noise = (torch.rand(args.N, 3).cuda() - 0.5) / np.sqrt(1/12)
 elif args.target == 'Sphere':
-    n = torch.randn(args.N, 3)
+    n = torch.randn(args.N, 3).cuda()
     n = torch.nn.functional.normalize(n, dim=1)
     noise = n / np.sqrt(1/3)
 elif args.target == 'Mesh':
