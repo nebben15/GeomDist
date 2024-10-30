@@ -14,6 +14,13 @@ np.random.seed(0)
 import random
 random.seed(0)
 
+# The flag below controls whether to allow TF32 on matmul. This flag defaults to False
+# in PyTorch 1.12 and later.
+torch.backends.cuda.matmul.allow_tf32 = True
+
+# The flag below controls whether to allow TF32 on cuDNN. This flag defaults to True.
+torch.backends.cudnn.allow_tf32 = True
+
 parser = argparse.ArgumentParser('Inference', add_help=False)
 parser.add_argument('--pth', default='output/lamp_cube/checkpoint-0.pth', type=str)
 parser.add_argument('--texture', action='store_true')
@@ -66,13 +73,13 @@ if args.texture:
         colors = (colors * np.sqrt(1/12) + 0.5) * 255.0
         colors = np.concatenate([colors, np.ones_like(colors[:, 0:1]) * 255.0], axis=1).astype(np.uint8) # alpha channel
 
-        trimesh.PointCloud(vertices, colors).export('sample-{:03d}.ply'.format(i+1))
+        trimesh.PointCloud(vertices, colors).export('sample-{:03d}.ply'.format(i))
 
 else:
     trimesh.PointCloud(sample.detach().cpu().numpy()).export('sample.ply')
 
     for i, s in enumerate(intermediate_steps):
-        trimesh.PointCloud(s).export('sample-{:03d}.ply'.format(i+1))
+        trimesh.PointCloud(s).export('sample-{:03d}.ply'.format(i))
 
 # noise = torch.randn(1000000, 3).cuda()
 # for sigma in range(1, 33):
