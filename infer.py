@@ -69,13 +69,13 @@ if args.texture:
         colors = (colors * np.sqrt(1/12) + 0.5) * 255.0
         colors = np.concatenate([colors, np.ones_like(colors[:, 0:1]) * 255.0], axis=1).astype(np.uint8) # alpha channel
 
-        trimesh.PointCloud(vertices, colors).export('sample-{:03d}.ply'.format(i+1))
+        trimesh.PointCloud(vertices, colors).export('sample-{:03d}.ply'.format(i))
 
 else:
     trimesh.PointCloud(sample.detach().cpu().numpy()).export('sample.ply')
 
     for i, s in enumerate(intermediate_steps):
-        trimesh.PointCloud(s).export('sample-{:03d}.ply'.format(i+1))
+        trimesh.PointCloud(s).export('sample-{:03d}.ply'.format(i))
 
 # noise = torch.randn(1000000, 3).cuda()
 # for sigma in range(1, 33):
