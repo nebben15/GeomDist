@@ -36,13 +36,10 @@ if args.target == 'Gaussian':
     noise = torch.randn(args.N, 3).cuda()
 elif args.target == 'Uniform':
     noise = (torch.rand(args.N, 3).cuda() - 0.5) / np.sqrt(1/12)
-elif args.target == 'Plane':
-    noise = (torch.rand(args.N, 3).cuda() - 0.5) / np.sqrt(1/12)
-    noise[:, 2] = 0
-elif args.target == 'Plane':
-    noise = (torch.rand(args.N, 3).cuda() - 0.5) / np.sqrt(1/12)
-    noise[:, 2] = 0
-    noise[:, 1] = 0
+elif args.target == 'Sphere':
+    n = torch.randn(args.N, 3)
+    n = torch.nn.functional.normalize(n, dim=1)
+    noise = n / np.sqrt(1/3)
 elif args.target == 'Mesh':
     assert args.noise_mesh is not None
     noise, _ = trimesh.sample.sample_surface(trimesh.load(args.noise_mesh), args.N)

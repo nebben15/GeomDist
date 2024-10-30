@@ -5,6 +5,7 @@ import math
 
 import numpy as np
 
+import torch.nn.functional
 import trimesh
 
 
@@ -366,13 +367,12 @@ class EDMLoss:
         elif self.dist == 'Uniform':
             n = (torch.rand_like(y) - 0.5) / np.sqrt(1/12) * sigma[:, None]
             # print(((torch.rand_like(y) - 0.5) / np.sqrt(1/12)).mean(), ((torch.rand_like(y) - 0.5) / np.sqrt(1/12)).std())
-        elif self.dist == 'Plane':
-            n = (torch.rand_like(y) - 0.5) / np.sqrt(1/12) * sigma[:, None]
-            n[:, 2] = 0
-        elif self.dist == 'Line':
-            n = (torch.rand_like(y) - 0.5) / np.sqrt(1/12) * sigma[:, None]
-            n[:, 2] = 0
-            n[:, 1] = 0
+        elif self.dist == 'Sphere':
+            n = torch.randn_like(y[:, :3])
+            n = torch.nn.functional.normalize(n, dim=1)
+            n /= np.sqrt(1/3)
+            n = n * sigma[:, None]
+
         elif self.dist == "Mesh":
             assert init_noise is not None
             n = init_noise * sigma[:, None]
