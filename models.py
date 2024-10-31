@@ -265,6 +265,10 @@ class EDMPrecond(torch.nn.Module):
         return points
         return trimesh.Trimesh(vertices=points.detach().cpu().numpy(), faces=mesh.faces)
 
+    @torch.no_grad()
+    def inverse(self, cond=None, samples=None, channels=3, num_steps=18):
+        return inverse_edm_sampler(self, samples, cond, num_steps=num_steps)
+
 
 class StackedRandomGenerator:
     def __init__(self, device, seeds):
@@ -332,6 +336,68 @@ def edm_sampler(
         outputs.append((x_next / (1+t_next**2).sqrt()).detach().cpu().numpy())
     return x_next, outputs
 
+def inverse_edm_sampler(
+    net, latents, class_labels=None, randn_like=torch.randn_like,
+    num_steps=18, sigma_min=0.002, sigma_max=80, rho=7,
+    # S_churn=40, S_min=0.05, S_max=50, S_noise=1.003,
+    S_churn=0, S_min=0, S_max=float('inf'), S_noise=1,
+):  
+    # disable S_churn
+    assert S_churn==0
+
+    # Adjust noise levels based on what's supported by the network.
+    sigma_min = max(sigma_min, net.sigma_min)
+    sigma_max = min(sigma_max, net.sigma_max)
+
+    # Time step discretization.
+    step_indices = torch.arange(num_steps, dtype=torch.float64, device=latents.device)
+    # step_indices = torch.flip(step_indices, [0])
+    t_steps = (sigma_max ** (1 / rho) + step_indices / (num_steps - 1) * (sigma_min ** (1 / rho) - sigma_max ** (1 / rho))) ** rho
+    t_steps = torch.cat([net.round_sigma(t_steps), torch.zeros_like(t_steps[:1])+1e-8]) # t_N = 0
+    # t_steps = t_steps[:-1]
+    t_steps = torch.flip(t_steps, [0])#[1:]
+    print(t_steps)
+
+    # Main sampling loop.
+    x_next = latents.to(torch.float64)# * t_steps[0]
+    # trimesh.PointCloud((x_next / t_steps[0]).detach().cpu().numpy()).export('sample-{:02d}.ply'.format(0))
+
+    # outputs = []
+    outputs = None
+    # outputs.append((x_next / t_steps[0]).detach().cpu().numpy())
+
+    print(t_steps[0])
+    print(x_next.mean(), x_next.std())
+    for i, (t_cur, t_next) in enumerate(zip(t_steps[:-1], t_steps[1:])): # 0, ..., N-1
+        # print('steps', t_cur, t_next)
+        x_cur = x_next
+        # print('cur', (x_cur / t_cur).mean(), (x_cur / t_cur).std())
+
+        # Increase noise temporarily.
+        gamma = min(S_churn / num_steps, np.sqrt(2) - 1) if S_min <= t_cur <= S_max else 0
+        t_hat = net.round_sigma(t_cur + gamma * t_cur)
+        x_hat = x_cur + (t_hat ** 2 - t_cur ** 2).sqrt() * S_noise * randn_like(x_cur)
+        x_hat = x_cur
+        t_hat = t_cur
+
+        # Euler step.
+        denoised = net(x_hat, t_hat, class_labels).to(torch.float64)
+        d_cur = (x_hat - denoised) / t_hat
+        x_next = x_hat + (t_next - t_hat) * d_cur
+
+        # Apply 2nd order correction.
+        if i < num_steps - 1:
+            denoised = net(x_next, t_next, class_labels).to(torch.float64)
+            d_prime = (x_next - denoised) / t_next
+            x_next = x_hat + (t_next - t_hat) * (0.5 * d_cur + 0.5 * d_prime)
+
+        # trimesh.PointCloud((x_next / (1+t_next**2).sqrt()).detach().cpu().numpy()).export('sample-{:02d}.ply'.format(i+1))
+        print('next', (x_next / (1+t_next**2).sqrt()).mean(), (x_next / (1+t_next**2).sqrt()).std())
+        # print(x_next.mean(), x_next.std())
+
+        # outputs.append((x_next / (1+t_next**2).sqrt()).detach().cpu().numpy())
+    x_next = x_next / (1+t_next**2).sqrt()
+    return x_next, outputs
 
 class EDMLoss:
     def __init__(self, P_mean=-1.2, P_std=1.2, sigma_data=1, dist='Gaussian'):
