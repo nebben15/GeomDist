@@ -50,25 +50,30 @@ def train_one_epoch(model: torch.nn.Module,
     
     print(data_loader)
 
+    noise = None
+
     if isinstance(data_loader, dict):
         obj_file = data_loader['obj_file']
         batch_size = data_loader['batch_size']
 
         if obj_file is not None:
-            mesh = trimesh.load(obj_file)
-            if data_loader['texture_path'] is not None:
-                img = Image.open(data_loader['texture_path'])
-                material = trimesh.visual.texture.SimpleMaterial(image=img)
-                assert mesh.visual.uv is not None
-                texture = trimesh.visual.TextureVisuals(mesh.visual.uv, image=img, material=material)
-                mesh = trimesh.Trimesh(vertices=mesh.vertices, faces=mesh.faces, visual=texture, process=False)
+            if obj_file.endswith('.obj'):
+                mesh = trimesh.load(obj_file)
+                if data_loader['texture_path'] is not None:
+                    img = Image.open(data_loader['texture_path'])
+                    material = trimesh.visual.texture.SimpleMaterial(image=img)
+                    assert mesh.visual.uv is not None
+                    texture = trimesh.visual.TextureVisuals(mesh.visual.uv, image=img, material=material)
+                    mesh = trimesh.Trimesh(vertices=mesh.vertices, faces=mesh.faces, visual=texture, process=False)
 
-                samples, _, colors = trimesh.sample.sample_surface(mesh,  2048*64*4*64, sample_color=True)
-                colors = colors[:, :3] # remove alpha
-                colors = (colors.astype(np.float32) / 255.0 - 0.5)  / np.sqrt(1/12) # [-1, 1]
-                samples = np.concatenate([samples, colors], axis=1)
+                    samples, _, colors = trimesh.sample.sample_surface(mesh,  2048*64*4*64, sample_color=True)
+                    colors = colors[:, :3] # remove alpha
+                    colors = (colors.astype(np.float32) / 255.0 - 0.5)  / np.sqrt(1/12) # [-1, 1]
+                    samples = np.concatenate([samples, colors], axis=1)
+                else:
+                    samples, _ = trimesh.sample.sample_surface(mesh,  2048*64*4*64)
             else:
-                samples, _ = trimesh.sample.sample_surface(mesh,  2048*64*4*64)
+                samples = trimesh.load(obj_file).vertices
 
         else:
             if data_loader['primitive'] == 'sphere':

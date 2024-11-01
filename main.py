@@ -134,7 +134,7 @@ def main(args):
 
 
     neural_rendering_resolution = 128
-    if args.data_path.endswith('.obj'):
+    if args.data_path.endswith('.obj') or args.data_path.endswith('.ply'):
         data_loader_train = {
             'obj_file': args.data_path,
             'batch_size': args.batch_size,
@@ -145,7 +145,7 @@ def main(args):
             data_loader_train['noise_mesh'] = args.noise_mesh
         else:
             data_loader_train['noise_mesh'] = None
-    elif 'sphere' or 'plane' in args.data_path:
+    elif 'sphere' in args.data_path or 'plane' in args.data_path:
         data_loader_train = {
             'obj_file': None,
             'primitive': args.data_path,
@@ -157,30 +157,31 @@ def main(args):
             data_loader_train['noise_mesh'] = args.noise_mesh
         else:
             data_loader_train['noise_mesh'] = None
-    elif args.data_path.endswith('.ply'):
-        dataset_train = Points(args.data_path)
+    # elif args.data_path.endswith('.ply'):
+    #     dataset_train = Points(args.data_path)
 
-        if True:  # args.distributed:
+    #     if True:  # args.distributed:
 
-            sampler_train = torch.utils.data.DistributedSampler(
-                dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True
-            )
-            print("Sampler_train = %s" % str(sampler_train))
+    #         sampler_train = torch.utils.data.DistributedSampler(
+    #             dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True
+    #         )
+    #         print("Sampler_train = %s" % str(sampler_train))
             
-            # sampler_val = torch.utils.data.SequentialSampler(dataset_val)
-        else:
-            sampler_train = torch.utils.data.RandomSampler(dataset_train)
+    #         # sampler_val = torch.utils.data.SequentialSampler(dataset_val)
+    #     else:
+    #         sampler_train = torch.utils.data.RandomSampler(dataset_train)
 
-        data_loader_train = torch.utils.data.DataLoader(
-            dataset_train, sampler=sampler_train,
-            batch_size=args.batch_size,
-            num_workers=args.num_workers,
-            pin_memory=args.pin_mem,
-            drop_last=True,
-            # prefetch_factor=1,
-        )
+    #     data_loader_train = torch.utils.data.DataLoader(
+    #         dataset_train, sampler=sampler_train,
+    #         batch_size=args.batch_size,
+    #         num_workers=args.num_workers,
+    #         pin_memory=args.pin_mem,
+    #         drop_last=False,
+    #         # prefetch_factor=1,
+    #     )
     else:
         raise NotImplementedError
+    print(data_loader_train)
 
     if global_rank == 0 and args.log_dir is not None and not args.eval:
         os.makedirs(args.log_dir, exist_ok=True)
@@ -224,8 +225,8 @@ def main(args):
     start_time = time.time()
     max_iou = 0.0
     for epoch in range(args.start_epoch, args.epochs):
-        if args.distributed and args.data_path.endswith('.ply'):
-            data_loader_train.sampler.set_epoch(epoch)
+        # if args.distributed and args.data_path.endswith('.ply'):
+        #     data_loader_train.sampler.set_epoch(epoch)
 
         train_stats = train_one_epoch(
             model, data_loader_train,

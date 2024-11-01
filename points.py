@@ -8,14 +8,15 @@ from torch.utils import data
 
 class Points(data.Dataset):
     def __init__(self, ply_path):
-        # points = trimesh.load(ply_path).vertices
+        points = trimesh.load(ply_path).vertices
         # self.points = np.array(points)
-        if os.path.exists('test.npy'):
-            points = np.load('test.npy')
-        else:
-            points, _ = trimesh.sample.sample_surface(trimesh.load('test.obj'), 50000000*5)
-            np.save('test.npy', points)
-        self.points = torch.from_numpy(points) - 0.12
+        # if os.path.exists('test.npy'):
+        #     points = np.load('test.npy')
+        # else:
+        #     points, _ = trimesh.sample.sample_surface(trimesh.load(ply_path), 50000000*5)
+        #     np.save('test.npy', points)
+        self.points = torch.from_numpy(points)# - 0.12
+        print(self.points.std(), self.points.mean())
 
     def __len__(self):
         return self.points.shape[0]# * 16
