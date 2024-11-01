@@ -1,4 +1,6 @@
 import argparse 
+from pathlib import Path
+import os
 
 import torch
 
@@ -22,15 +24,20 @@ torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
 
 parser = argparse.ArgumentParser('Inference', add_help=False)
-parser.add_argument('--pth', default='output/lamp_cube/checkpoint-0.pth', type=str)
+parser.add_argument('--pth', required=True, type=str)
 parser.add_argument('--texture', action='store_true')
 parser.add_argument('--target', default='Gaussian', type=str)
 parser.add_argument('--N', default=1000000, type=int)
 parser.add_argument('--num-steps', default=64, type=int)
 parser.add_argument('--noise_mesh', default=None, type=str)
+parser.add_argument('--output', required=True, type=str)
+parser.add_argument('--intermediate', action='store_true')
 parser.set_defaults(texture=False)
+parser.set_defaults(intermediate=False)
 
 args = parser.parse_args()
+
+Path(args.output).mkdir(parents=True, exist_ok=True)
 
 if args.texture:
     model = EDMPrecond(channels=6).cuda()
@@ -66,20 +73,22 @@ if args.texture:
     vertices, colors = sample[:, :3], sample[:, 3:]
     colors = (colors * np.sqrt(1/12) + 0.5) * 255.0
     colors = np.concatenate([colors, np.ones_like(colors[:, 0:1]) * 255.0], axis=1).astype(np.uint8) # alpha channel
-    trimesh.PointCloud(vertices, colors).export('sample.ply')
+    trimesh.PointCloud(vertices, colors).export(os.path.join(args.output, 'sample.ply'))
 
-    for i, s in enumerate(intermediate_steps):
-        vertices, colors = s[:, :3], s[:, 3:]
-        colors = (colors * np.sqrt(1/12) + 0.5) * 255.0
-        colors = np.concatenate([colors, np.ones_like(colors[:, 0:1]) * 255.0], axis=1).astype(np.uint8) # alpha channel
+    if args.intermediate:
+        for i, s in enumerate(intermediate_steps):
+            vertices, colors = s[:, :3], s[:, 3:]
+            colors = (colors * np.sqrt(1/12) + 0.5) * 255.0
+            colors = np.concatenate([colors, np.ones_like(colors[:, 0:1]) * 255.0], axis=1).astype(np.uint8) # alpha channel
 
-        trimesh.PointCloud(vertices, colors).export('sample-{:03d}.ply'.format(i))
+            trimesh.PointCloud(vertices, colors).export(os.path.join(args.output, 'sample-{:03d}.ply'.format(i)))
 
 else:
-    trimesh.PointCloud(sample.detach().cpu().numpy()).export('sample.ply')
+    trimesh.PointCloud(sample.detach().cpu().numpy()).export(os.path.join(args.output, 'sample.ply'))
 
-    for i, s in enumerate(intermediate_steps):
-        trimesh.PointCloud(s).export('sample-{:03d}.ply'.format(i))
+    if args.intermediate:
+        for i, s in enumerate(intermediate_steps):
+            trimesh.PointCloud(s).export(os.path.join(args.output, 'sample-{:03d}.ply'.format(i)))
 
 # noise = torch.randn(1000000, 3).cuda()
 # for sigma in range(1, 33):
