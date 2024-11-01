@@ -170,9 +170,6 @@ def main(args):
             # sampler_val = torch.utils.data.SequentialSampler(dataset_val)
         else:
             sampler_train = torch.utils.data.RandomSampler(dataset_train)
-    else:
-        raise NotImplementedError
-
 
         data_loader_train = torch.utils.data.DataLoader(
             dataset_train, sampler=sampler_train,
@@ -182,6 +179,8 @@ def main(args):
             drop_last=True,
             # prefetch_factor=1,
         )
+    else:
+        raise NotImplementedError
 
     if global_rank == 0 and args.log_dir is not None and not args.eval:
         os.makedirs(args.log_dir, exist_ok=True)
