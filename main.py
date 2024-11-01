@@ -35,6 +35,7 @@ def get_args_parser():
     # Model parameters
     parser.add_argument('--model', default='EDMPrecond', type=str, metavar='MODEL',
                         help='Name of model to train')
+    parser.add_argument('--depth', default=6, type=int, metavar='MODEL')
 
     # Optimizer parameters
     parser.add_argument('--clip_grad', type=float, default=None, metavar='NORM',
@@ -191,7 +192,7 @@ def main(args):
 
     criterion = EDMLoss(dist=args.target)
     
-    model = models.__dict__[args.model](channels=3 if args.texture_path is None else 6)
+    model = models.__dict__[args.model](channels=3 if args.texture_path is None else 6, depth=args.depth)
     model.to(device)
 
     model_without_ddp = model

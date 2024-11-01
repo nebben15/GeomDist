@@ -149,6 +149,7 @@ class Network(nn.Module):
         self,
         channels = 3,
         hidden_size = 256,
+        depth = 6,
     ):
         super().__init__()
 
@@ -158,7 +159,7 @@ class Network(nn.Module):
         self.x_embedder = PointEmbed(dim=hidden_size, other_dim=channels-3)
 
         self.gains = nn.ParameterList([
-            torch.nn.Parameter(torch.zeros([])) for _ in range(6)
+            torch.nn.Parameter(torch.zeros([])) for _ in range(depth)
         ])
         ##
         self.layers = nn.ModuleList([
@@ -166,7 +167,7 @@ class Network(nn.Module):
                 MPConv(hidden_size, hidden_size, []),
                 MPConv(hidden_size, hidden_size, []),
                 MPConv(hidden_size, 1 * hidden_size, []),
-            ]) for _ in range(6)
+            ]) for _ in range(depth)
         ])
 
 
@@ -214,6 +215,7 @@ class EDMPrecond(torch.nn.Module):
         sigma_min = 0,
         sigma_max = float('inf'),
         sigma_data  = 1,
+        depth = 6,
     ):
         super().__init__()
 
@@ -222,7 +224,7 @@ class EDMPrecond(torch.nn.Module):
         self.sigma_max = sigma_max
 
         self.sigma_data = sigma_data
-        self.model = Network(channels=channels, hidden_size=512)
+        self.model = Network(channels=channels, hidden_size=512, depth=depth)
 
     def forward(self, x, sigma, force_fp32=False, **model_kwargs):
 
