@@ -32,6 +32,7 @@ parser.add_argument('--num-steps', default=64, type=int)
 parser.add_argument('--noise_mesh', default=None, type=str)
 parser.add_argument('--output', required=True, type=str)
 parser.add_argument('--intermediate', action='store_true')
+parser.add_argument('--depth', default=6, type=int)
 parser.set_defaults(texture=False)
 parser.set_defaults(intermediate=False)
 
@@ -40,9 +41,9 @@ args = parser.parse_args()
 Path(args.output).mkdir(parents=True, exist_ok=True)
 
 if args.texture:
-    model = EDMPrecond(channels=6).cuda()
+    model = EDMPrecond(channels=6, depth=args.depth).cuda()
 else:
-    model = EDMPrecond().cuda()
+    model = EDMPrecond(depth=args.depth).cuda()
 
 model.load_state_dict(torch.load(args.pth, map_location='cpu')['model'], strict=True)
 
