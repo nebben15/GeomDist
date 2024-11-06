@@ -86,6 +86,9 @@ def train_one_epoch(model: torch.nn.Module,
                 samples[:, 2] = 0
                 samples = (samples - 0) / np.sqrt(2/9*2*0.5**3)
                 samples = samples.numpy()
+            elif data_loader['primitive'] == 'volume':
+                samples = (torch.rand(2048*64*4*64, 3) - 0.5) / np.sqrt(1/12) 
+                samples = samples.numpy()
             elif data_loader['primitive'] == 'gaussian':
                 samples = np.random.randn(2048*64*4*64, 3).astype(np.float32)
             else:

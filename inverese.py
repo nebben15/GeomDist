@@ -42,6 +42,13 @@ samples, _ = trimesh.sample.sample_surface(mesh,  args.N)
 samples = samples.astype(np.float32)
 samples = torch.from_numpy(samples).float().cuda()
 
+# samples = torch.rand(args.N, 3).cuda() - 0.5
+# samples[:, 2] = 0
+# samples = (samples - 0) / np.sqrt(2/9*2*0.5**3)
+
+mesh = trimesh.load('samples/loong/sample.ply')
+samples = torch.from_numpy(np.array(mesh.vertices).astype(np.float32)).cuda()
+    
 model.load_state_dict(torch.load(args.pth, map_location='cpu')['model'], strict=True)
 
 sample, intermediate_steps = model.inverse(samples=samples, num_steps=args.num_steps)

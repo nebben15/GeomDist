@@ -145,7 +145,7 @@ def main(args):
             data_loader_train['noise_mesh'] = args.noise_mesh
         else:
             data_loader_train['noise_mesh'] = None
-    elif 'sphere' in args.data_path or 'plane' in args.data_path:
+    elif 'sphere' in args.data_path or 'plane' in args.data_path or 'volume' in args.data_path:
         data_loader_train = {
             'obj_file': None,
             'primitive': args.data_path,
