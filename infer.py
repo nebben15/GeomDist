@@ -48,9 +48,9 @@ else:
 model.load_state_dict(torch.load(args.pth, map_location='cpu')['model'], strict=True)
 
 if args.target == 'Gaussian':
-    # noise = torch.randn(args.N, 3).cuda()
-    mesh = trimesh.load('gaussian.ply')
-    noise = torch.from_numpy(np.array(mesh.vertices).astype(np.float32)).cuda()
+    noise = torch.randn(args.N, 3).cuda()
+    # mesh = trimesh.load('gaussian.ply')
+    # noise = torch.from_numpy(np.array(mesh.vertices).astype(np.float32)).cuda()
 elif args.target == 'Uniform':
     noise = (torch.rand(args.N, 3).cuda() - 0.5) / np.sqrt(1/12)
 elif args.target == 'Sphere':
