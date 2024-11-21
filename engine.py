@@ -26,8 +26,6 @@ import trimesh
 
 from PIL import Image
 
-# from models import EDMLoss
-
 def train_one_epoch(model: torch.nn.Module,
                     data_loader, optimizer: torch.optim.Optimizer,
                     criterion,
@@ -42,8 +40,6 @@ def train_one_epoch(model: torch.nn.Module,
     accum_iter = args.accum_iter
 
     optimizer.zero_grad()
-
-    # criterion = EDMLoss()
 
     if log_writer is not None:
         print('log_dir: {}'.format(log_writer.log_dir))
@@ -99,9 +95,7 @@ def train_one_epoch(model: torch.nn.Module,
         else:
             noise = None
 
-        # samples, _ = trimesh.sample.sample_surface(trimesh.load('shapes/Jellyfish_lamp_part_A__B_normalized.obj'),  2048*64*4*64)
         samples = samples.astype(np.float32)# - 0.12
-        # data_loader = range(512)
         data_loader = range(data_loader['epoch_size'])
 
     for data_iter_step, batch in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
@@ -109,9 +103,6 @@ def train_one_epoch(model: torch.nn.Module,
         # we use a per iteration (instead of per epoch) lr scheduler
         if data_iter_step % accum_iter == 0:
             lr_sched.adjust_learning_rate(optimizer, data_iter_step / len(data_loader) + epoch, args)
-
-        # xyz = xyz.to(device, non_blocking=True)
-        # xyz, _ = trimesh.sample.sample_surface(trimesh.load('test.obj'), 2048*64*2)
 
         if isinstance(batch, int):
             ind = np.random.default_rng().choice(samples.shape[0], batch_size, replace=True)

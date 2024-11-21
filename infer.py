@@ -49,8 +49,6 @@ model.load_state_dict(torch.load(args.pth, map_location='cpu')['model'], strict=
 
 if args.target == 'Gaussian':
     noise = torch.randn(args.N, 3).cuda()
-    # mesh = trimesh.load('gaussian.ply')
-    # noise = torch.from_numpy(np.array(mesh.vertices).astype(np.float32)).cuda()
 elif args.target == 'Uniform':
     noise = (torch.rand(args.N, 3).cuda() - 0.5) / np.sqrt(1/12)
 elif args.target == 'Sphere':
@@ -70,7 +68,6 @@ if args.texture:
 
 sample, intermediate_steps = model.sample(batch_seeds=noise, num_steps=args.num_steps)
 
-# sample.export('ouput_a.obj')
 if args.texture:
     sample = sample.detach().cpu().numpy()
     vertices, colors = sample[:, :3], sample[:, 3:]
@@ -92,15 +89,3 @@ else:
     if args.intermediate:
         for i, s in enumerate(intermediate_steps):
             trimesh.PointCloud(s).export(os.path.join(args.output, 'sample-{:03d}.ply'.format(i)))
-
-# noise = torch.randn(1000000, 3).cuda()
-# for sigma in range(1, 33):
-
-#     id = noise.pow(2).sum(dim=1).sqrt() < sigma / 10
-#     sample = model.sample(batch_seeds=noise[id], num_steps=64)
-#     # (a.pow(2).sum(dim=1)<15).sum()
-#     # print(sample.shape)
-
-#     # sample.export('ouput_a.obj')
-#     trimesh.PointCloud(noise[id].detach().cpu().numpy()).export('ci-noise-{:02d}.ply'.format(sigma))
-#     trimesh.PointCloud(sample.detach().cpu().numpy()).export('ci-surface-{:02d}.ply'.format(sigma))

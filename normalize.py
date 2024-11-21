@@ -15,12 +15,6 @@ parser.add_argument('--output', required=True, type=str)
 args = parser.parse_args()
 
 model = trimesh.load(args.path, process=False)
-# model = trimesh.util.concatenate([trimesh.load(m, process=False) for m in glob.glob('shapes/wukong/*.stl')])
-# print(model.vertices.max(axis=0), model.vertices.min(axis=0))
-
-# print(model.bounding_box.centroid)
-
-# print((model.vertices.max(axis=0) + model.vertices.min(axis=0)) / 2)
 
 def normalize_meshes(mesh):
     mesh.vertices -= (mesh.vertices.max(axis=0) + mesh.vertices.min(axis=0)) / 2

@@ -142,9 +142,6 @@ class PointEmbed(nn.Module):
 
 
 class Network(nn.Module):
-    """
-    Diffusion model with a Transformer backbone.
-    """
     def __init__(
         self,
         channels = 3,
@@ -252,20 +249,13 @@ class EDMPrecond(torch.nn.Module):
         device = batch_seeds.device
         batch_size = batch_seeds.shape[0]
 
-        # rnd = StackedRandomGenerator(device, batch_seeds)
         rnd = None
-        # latents = rnd.randn([batch_size, channels], device=device)
-
-        # mesh = trimesh.load('test_a.obj')
-        # points, _ = trimesh.sample.sample_surface(mesh, 100000)
-        # points = torch.randn(batch_seeds.shape[0], 3)
         points = batch_seeds
 
         latents = points.float().to(device)
 
         points = edm_sampler(self, latents, cond, num_steps=num_steps)
         return points
-        return trimesh.Trimesh(vertices=points.detach().cpu().numpy(), faces=mesh.faces)
 
     @torch.no_grad()
     def inverse(self, cond=None, samples=None, channels=3, num_steps=18):
@@ -291,7 +281,6 @@ class StackedRandomGenerator:
 def edm_sampler(
     net, latents, class_labels=None, randn_like=torch.randn_like,
     num_steps=18, sigma_min=0.002, sigma_max=80, rho=7,
-    # S_churn=40, S_min=0.05, S_max=50, S_noise=1.003,
     S_churn=0, S_min=0, S_max=float('inf'), S_noise=1,
 ):  
     # disable S_churn
@@ -308,7 +297,6 @@ def edm_sampler(
 
     # Main sampling loop.
     x_next = latents.to(torch.float64) * t_steps[0]
-    # trimesh.PointCloud((x_next / t_steps[0]).detach().cpu().numpy()).export('sample-{:02d}.ply'.format(0))
     outputs = []
     outputs.append((x_next / t_steps[0]).detach().cpu().numpy())
     print(t_steps[0])
@@ -333,15 +321,12 @@ def edm_sampler(
             denoised = net(x_next, t_next, class_labels).to(torch.float64)
             d_prime = (x_next - denoised) / t_next
             x_next = x_hat + (t_next - t_hat) * (0.5 * d_cur + 0.5 * d_prime)
-        # trimesh.PointCloud((x_next / (1+t_next**2).sqrt()).detach().cpu().numpy()).export('sample-{:02d}.ply'.format(i+1))
-        # print((x_next / (1+t_next**2).sqrt()).mean(), (x_next / (1+t_next**2).sqrt()).std())
         outputs.append((x_next / (1+t_next**2).sqrt()).detach().cpu().numpy())
     return x_next, outputs
 
 def inverse_edm_sampler(
     net, latents, class_labels=None, randn_like=torch.randn_like,
     num_steps=18, sigma_min=0.002, sigma_max=80, rho=7,
-    # S_churn=40, S_min=0.05, S_max=50, S_noise=1.003,
     S_churn=0, S_min=0, S_max=float('inf'), S_noise=1,
 ):  
     # disable S_churn
@@ -353,16 +338,12 @@ def inverse_edm_sampler(
 
     # Time step discretization.
     step_indices = torch.arange(num_steps, dtype=torch.float64, device=latents.device)
-    # step_indices = torch.flip(step_indices, [0])
     t_steps = (sigma_max ** (1 / rho) + step_indices / (num_steps - 1) * (sigma_min ** (1 / rho) - sigma_max ** (1 / rho))) ** rho
     t_steps = torch.cat([net.round_sigma(t_steps), torch.zeros_like(t_steps[:1])+1e-8]) # t_N = 0
-    # t_steps = t_steps[:-1]
     t_steps = torch.flip(t_steps, [0])#[1:]
-    print(t_steps)
 
     # Main sampling loop.
     x_next = latents.to(torch.float64)# * t_steps[0]
-    # trimesh.PointCloud((x_next / t_steps[0]).detach().cpu().numpy()).export('sample-{:02d}.ply'.format(0))
 
     # outputs = []
     outputs = None
@@ -393,9 +374,7 @@ def inverse_edm_sampler(
             d_prime = (x_next - denoised) / t_next
             x_next = x_hat + (t_next - t_hat) * (0.5 * d_cur + 0.5 * d_prime)
 
-        # trimesh.PointCloud((x_next / (1+t_next**2).sqrt()).detach().cpu().numpy()).export('sample-{:02d}.ply'.format(i+1))
         print('next', (x_next / (1+t_next**2).sqrt()).mean(), (x_next / (1+t_next**2).sqrt()).std())
-        # print(x_next.mean(), x_next.std())
 
         # outputs.append((x_next / (1+t_next**2).sqrt()).detach().cpu().numpy())
     x_next = x_next / (1+t_next**2).sqrt()
@@ -405,12 +384,7 @@ class EDMLoss:
     def __init__(self, P_mean=-1.2, P_std=1.2, sigma_data=1, dist='Gaussian'):
         self.P_mean = P_mean
         self.P_std = P_std
-        # self.P_mean = 0
-        # self.P_std = 1.7
         self.sigma_data = sigma_data
-
-        # points, _ = trimesh.sample.sample_surface(trimesh.load('test_a.obj'), 500000)
-        # self.points = points
 
         self.dist = dist
 
@@ -419,13 +393,7 @@ class EDMLoss:
 
         sigma = (rnd_normal * self.P_std + self.P_mean).exp()
         weight = (sigma ** 2 + self.sigma_data ** 2) / (sigma * self.sigma_data) ** 2
-        # weight = 1 + 1 / sigma
-        # print(inputs.max(), inputs.min(), inputs.mean(), inputs.std())
         y, augment_labels = augment_pipe(inputs) if augment_pipe is not None else (inputs, None)
-        # n = torch.randn_like(y) * sigma[:, None]
-
-        # ind = np.random.default_rng().choice(self.points.shape[0], y.shape[0], replace=False)
-        # n = torch.from_numpy(self.points[ind]).to(y.device) * sigma[:, None] / 0.4
 
         if self.dist == 'Gaussian':
             n = torch.randn_like(y[:, :3]) * sigma[:, None]
@@ -434,7 +402,6 @@ class EDMLoss:
                 n = torch.cat([n, c], dim=1)
         elif self.dist == 'Uniform':
             n = (torch.rand_like(y) - 0.5) / np.sqrt(1/12) * sigma[:, None]
-            # print(((torch.rand_like(y) - 0.5) / np.sqrt(1/12)).mean(), ((torch.rand_like(y) - 0.5) / np.sqrt(1/12)).std())
         elif self.dist == 'Sphere':
             n = torch.randn_like(y[:, :3])
             n = torch.nn.functional.normalize(n, dim=1)
@@ -447,15 +414,7 @@ class EDMLoss:
         else:
             raise NotImplementedError
 
-        # n = torch.rand_like(y) * sigma[:, None]# / np.sqrt(1/12) * sigma[:, None]
-        # print(n.max(), n.min(), n.mean(), n.std())
-
         D_yn = net(y + n, sigma)
-        # print(D_yn.shape, y.shape)
 
-        # loss = ((D_yn - y) ** 2)
         loss = weight[:, None] * ((D_yn - y) ** 2)
-        # print(weight.shape, logvar.shape, D_yn.shape)
-        # loss = (weight / logvar.exp()) * ((D_yn - y) ** 2) + logvar
-        # return loss.sum()
         return loss.mean()

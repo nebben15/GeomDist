@@ -125,9 +125,6 @@ def main(args):
     # The flag below controls whether to allow TF32 on cuDNN. This flag defaults to True.
     torch.backends.cudnn.allow_tf32 = True
 
-    # dataset_train = build_shape_surface_occupancy_dataset('train', args=args)
-    # dataset_val = build_shape_surface_occupancy_dataset('val', args=args)
-
     if True:
         num_tasks = misc.get_world_size()
         global_rank = misc.get_rank()
@@ -157,28 +154,6 @@ def main(args):
             data_loader_train['noise_mesh'] = args.noise_mesh
         else:
             data_loader_train['noise_mesh'] = None
-    # elif args.data_path.endswith('.ply'):
-    #     dataset_train = Points(args.data_path)
-
-    #     if True:  # args.distributed:
-
-    #         sampler_train = torch.utils.data.DistributedSampler(
-    #             dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True
-    #         )
-    #         print("Sampler_train = %s" % str(sampler_train))
-            
-    #         # sampler_val = torch.utils.data.SequentialSampler(dataset_val)
-    #     else:
-    #         sampler_train = torch.utils.data.RandomSampler(dataset_train)
-
-    #     data_loader_train = torch.utils.data.DataLoader(
-    #         dataset_train, sampler=sampler_train,
-    #         batch_size=args.batch_size,
-    #         num_workers=args.num_workers,
-    #         pin_memory=args.pin_mem,
-    #         drop_last=False,
-    #         # prefetch_factor=1,
-    #     )
     else:
         raise NotImplementedError
     print(data_loader_train)
@@ -269,6 +244,3 @@ if __name__ == '__main__':
     if args.output_dir:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
     main(args)
-
-
-# torchrun --nproc_per_node=1 main.py --accum_iter=1 --output_dir output/h --log_dir output/h --num_workers 4 --batch_size 2048 --epochs 2000 --warmup_epochs 1 --clip_grad 1.0 --blr 1e-5
