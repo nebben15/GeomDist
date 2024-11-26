@@ -1,6 +1,6 @@
 # Geometry Distributions
 
-### [Project Page](https://1zb.github.io/GeomDist/)
+### [Project Page](https://1zb.github.io/GeomDist/) | [Paper (arXiv)](https://arxiv.org/abs/2411.16076)
 
 ### :bullettrain_front: Training
 
@@ -23,3 +23,17 @@ https://huggingface.co/Zbalpha/geom_dist_ckpt
 ## :e-mail: Contact
 
 Contact [Biao Zhang](mailto:biao.zhang@kaust.edu.sa) ([@1zb](https://github.com/1zb)) if you have any further questions. This repository is for academic research use only.
+
+## :blue_book: Citation
+
+```bibtex
+@misc{zhang2024geometrydistributions,
+      title={Geometry Distributions}, 
+      author={Biao Zhang and Jing Ren and Peter Wonka},
+      year={2024},
+      eprint={2411.16076},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2411.16076}, 
+}
+```
