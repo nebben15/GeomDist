@@ -27,7 +27,7 @@ Contact [Biao Zhang](mailto:biao.zhang@kaust.edu.sa) ([@1zb](https://github.com/
 ## :blue_book: Citation
 
 ```bibtex
-@misc{zhang2024geometrydistributions,
+@article{zhang2024geometry,
       title={Geometry Distributions}, 
       author={Biao Zhang and Jing Ren and Peter Wonka},
       year={2024},
