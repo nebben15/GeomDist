@@ -28,12 +28,9 @@ Contact [Biao Zhang](mailto:biao.zhang@kaust.edu.sa) ([@1zb](https://github.com/
 
 ```bibtex
 @article{zhang2024geometry,
-      title={Geometry Distributions}, 
-      author={Biao Zhang and Jing Ren and Peter Wonka},
-      year={2024},
-      eprint={2411.16076},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV},
-      url={https://arxiv.org/abs/2411.16076}, 
+  title={Geometry Distributions},
+  author={Zhang, Biao and Ren, Jing and Wonka, Peter},
+  journal={arXiv preprint arXiv:2411.16076},
+  year={2024}
 }
 ```
