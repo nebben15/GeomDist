@@ -45,7 +45,7 @@ if args.texture:
 else:
     model = EDMPrecond(depth=args.depth).cuda()
 
-model.load_state_dict(torch.load(args.pth, map_location='cpu')['model'], strict=True)
+model.load_state_dict(torch.load(args.pth, map_location='cpu', weights_only=False)['model'], strict=True)
 
 if args.target == 'Gaussian':
     noise = torch.randn(args.N, 3).cuda()

@@ -1,0 +1,7 @@
+numpy
+scipy
+torch
+trimesh
+tensorboard
+einops
+open3d

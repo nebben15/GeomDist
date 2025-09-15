@@ -34,3 +34,9 @@ Contact [Biao Zhang](mailto:biao.zhang@kaust.edu.sa) ([@1zb](https://github.com/
   year={2024}
 }
 ```
+
+python infer.py --pth ../checkpoints/FAUST/checkpoint-25.pth --target Gaussian --num-steps 64 --output ../samples/shapes/FAUST --N 10000000
+
+
+torchrun --nproc_per_node=1 main.py --blr 5e-7 --batch_size 131072 --accum_iter 2 --output_dir ../checkpoints/FAUST --log_dir ../logs/FAUST --data_path ../MPI-FAUST/training/registrations/tr_reg_000.ply
+
