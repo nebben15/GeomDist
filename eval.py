@@ -1,4 +1,3 @@
-
 import trimesh
 from scipy.spatial import cKDTree as KDTree
 import numpy as np
@@ -15,6 +14,15 @@ scale = np.load(args.scale)
 
 prediction = trimesh.load(args.ply).vertices * scale
 reference = trimesh.load(args.reference).vertices * scale
+
+# Update evaluation logic to handle geometry+feature mode
+if prediction.shape[1] > 3:
+    print("Warning: Additional features are present but will not be used in evaluation.")
+    prediction = prediction[:, :3]  # Use only vertex positions
+
+if reference.shape[1] > 3:
+    print("Warning: Additional features are present in the reference but will not be used in evaluation.")
+    reference = reference[:, :3]  # Use only vertex positions
 
 tree = KDTree(prediction)
 dist, _ = tree.query(reference)

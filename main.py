@@ -64,6 +64,10 @@ def get_args_parser():
     parser.add_argument('--texture_path', default=None, type=str,
                         help='dataset path')
 
+    parser.add_argument('--feature_path', default=None, type=str, help='Path to the feature file (optional)')
+
+    parser.add_argument('--feature_interpolation', default='barycentric', type=str, help='How the extra vertex features are interpolated for sampled points on the surface (nearest-neighbor, barycentric)')
+
     parser.add_argument('--noise_mesh', default=None, type=str,
                         help='dataset path')
      
@@ -99,6 +103,37 @@ def get_args_parser():
 
     return parser
 
+def get_feature_dim(path):
+    """
+    Get the feature dimension from a .txt file.
+
+    Args:
+        path (str): Path to the .txt file.
+
+    Returns:
+        int: The feature dimension (number of columns).
+
+    Raises:
+        ValueError: If the file is not well-formed (rows have inconsistent lengths).
+    """
+    with open(path, 'r') as file:
+        lines = file.readlines()
+
+    # Ensure the file is not empty
+    if not lines:
+        raise ValueError(f"The file {path} is empty.")
+
+    # Get the feature dimension from the first row
+    first_row = lines[0].strip().split()
+    feature_dim = len(first_row)
+
+    # Check that all rows have the same number of columns
+    for i, line in enumerate(lines):
+        if len(line.strip().split()) != feature_dim:
+            raise ValueError(f"Inconsistent feature dimensions in file {path} at line {i + 1}.")
+
+    return feature_dim
+
 def main(args):
 
     # os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
@@ -132,11 +167,20 @@ def main(args):
 
     neural_rendering_resolution = 128
     if args.data_path.endswith('.obj') or args.data_path.endswith('.ply'):
+        if args.feature_path is not None:
+            mode = 'geometry+feature'
+        elif args.texture_path is not None:
+            mode = 'geometry+texture'
+        else:
+            mode = 'geometry'
+
         data_loader_train = {
             'obj_file': args.data_path,
             'batch_size': args.batch_size,
             'epoch_size': 512,
-            'texture_path': args.texture_path,
+            'texture_path': args.texture_path if mode == 'geometry+texture' else None,
+            'feature_path': args.feature_path if mode == 'geometry+feature' else None,
+            'mode': mode,
         }
         if args.noise_mesh is not None:
             data_loader_train['noise_mesh'] = args.noise_mesh
@@ -166,8 +210,12 @@ def main(args):
 
 
     criterion = EDMLoss(dist=args.target)
-    
-    model = models.__dict__[args.model](channels=3 if args.texture_path is None else 6, depth=args.depth)
+    channels = 3
+    if mode == "geometry+feature":
+        channels += get_feature_dim(path=args.feature_path)
+    elif mode == "geometry+texture":
+        channels = 6
+    model = models.__dict__[args.model](channels=channels, depth=args.depth)
     model.to(device)
 
     model_without_ddp = model
@@ -208,7 +256,8 @@ def main(args):
             optimizer, criterion, device, epoch, loss_scaler,
             args.clip_grad,
             log_writer=log_writer,
-            args=args
+            args=args,
+            feature_interpolation=args.feature_interpolation
         )
         if args.output_dir and (epoch % 5 == 0 or epoch + 1 == args.epochs):
             misc.save_model(
@@ -237,6 +286,8 @@ def main(args):
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print('Training time {}'.format(total_time_str))
+
+
 
 if __name__ == '__main__':
     args = get_args_parser()

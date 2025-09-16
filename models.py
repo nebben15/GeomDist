@@ -207,15 +207,15 @@ class Network(nn.Module):
 
 class EDMPrecond(torch.nn.Module):
     def __init__(self,
-        channels = 3, 
-        use_fp16 = False,
-        sigma_min = 0,
-        sigma_max = float('inf'),
-        sigma_data  = 1,
-        depth = 6,
+        channels=3,  # Default to 3 for geometry
+        use_fp16=False,
+        sigma_min=0,
+        sigma_max=float('inf'),
+        sigma_data=1,
+        depth=6,
     ):
         super().__init__()
-
+        self.channels = channels
         self.use_fp16 = use_fp16
         self.sigma_min = sigma_min
         self.sigma_max = sigma_max
@@ -224,7 +224,8 @@ class EDMPrecond(torch.nn.Module):
         self.model = Network(channels=channels, hidden_size=512, depth=depth)
 
     def forward(self, x, sigma, force_fp32=False, **model_kwargs):
-
+        # Ensure the input has the correct number of channels
+        assert x.shape[1] == self.channels, f"Expected {self.channels} channels, got {x.shape[1]}"
         x = x.to(torch.float32)
         sigma = sigma.to(torch.float32).reshape(-1, 1)
         dtype = torch.float16 if (self.use_fp16 and not force_fp32 and x.device.type == 'cuda') else torch.float32
