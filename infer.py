@@ -104,13 +104,15 @@ elif mode == 'geometry+feature':
     pcd_t = o3d.t.geometry.PointCloud()
     # Positions must be set this way
     pcd_t.point.positions = o3d.core.Tensor(vertices, dtype=o3d.core.Dtype.Float32)
-    # Set custom attributes
-    for i in range(features.shape[1]):
-        attr_name = f'feat_dim_{i}'
-        col = features[:, i].reshape(-1, 1)
-        # Need to wrap as Open3D tensor
-        tcol = o3d.core.Tensor(col, dtype=o3d.core.Dtype.Float32)
-        pcd_t.point[attr_name] = tcol
+    # Set multi-dimensional feature as a single attribute
+    pcd_t.point['features'] = o3d.core.Tensor(features, dtype=o3d.core.Dtype.Float32)
+    # # Set custom attributes
+    # for i in range(features.shape[1]):
+    #     attr_name = f'feat_dim_{i}'
+    #     col = features[:, i].reshape(-1, 1)
+    #     # Need to wrap as Open3D tensor
+    #     tcol = o3d.core.Tensor(col, dtype=o3d.core.Dtype.Float32)
+    #     pcd_t.point[attr_name] = tcol
     # Write to PLY, ensuring tensor attributes are included
     o3d.t.io.write_point_cloud(os.path.join(args.output, 'sample.ply'), pcd_t, write_ascii=False)
 
