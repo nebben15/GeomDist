@@ -59,6 +59,12 @@ def train_one_epoch(model: torch.nn.Module,
 
         if obj_file is not None:
             mesh = trimesh.load(obj_file)
+
+            # Normalize the mesh to fit within a unit sphere
+            mesh.vertices -= mesh.vertices.mean(axis=0)  # Center the mesh at the origin
+            max_distance = np.linalg.norm(mesh.vertices, axis=1).max()  # Compute the maximum distance from the origin
+            mesh.vertices /= max_distance  # Scale the vertices to fit within the unit sphere
+            
             if obj_file.endswith('.obj'):
                 if mode == 'geometry+feature':
                     # Load features and ensure they match the number of vertices

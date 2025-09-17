@@ -1,0 +1,6 @@
+- ✅ scaling of geometry 
+- categorical features / one-hot / noise added to features
+- continuous features / bounded vs unbounded
+- legend
+- overlay button
+- diffuse spot with color for comparison

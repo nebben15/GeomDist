@@ -104,14 +104,23 @@ def visualize_mesh_cloud(mesh_path, pcd_path, feature_path=None,
     
 
 if __name__ == "__main__":
+    mapping_path = None
+    feature_path = None
+    ### loong
+    # mesh_path = "../shapes/datasets--Zbalpha--shapes/snapshots/56ed38231943963314292f76e9d5bc40ee475f52/loong.obj"
+    # pcd_path = "../samples/shapes/loong/self_trained_5_epochs.ply"
+    #pcd_path = "../samples/shapes/loong/sample.ply"
     ### spot
-#     mesh_path = "/home/ben/Thesis/shapes/datasets--Zbalpha--shapes/snapshots/" \
-#                  "56ed38231943963314292f76e9d5bc40ee475f52/spot/spot_uv_normalized.obj"
-#     pcd_path = "../samples/shapes/spot_color/sample.ply"
+    # mesh_path = "../shapes/datasets--Zbalpha--shapes/snapshots/56ed38231943963314292f76e9d5bc40ee475f52/spot/spot_uv_normalized.obj"
+    # pcd_path = "../samples/shapes/spot_color/sample.ply"
+    ### FAUST
+    # mesh_path = "../MPI-FAUST/training/registrations/tr_reg_000.ply"
+    # pcd_path = "../samples/FAUST/sample.ply"
     ### FAUST with semantic features
     mesh_path = "../MPI-FAUST/training/registrations/tr_reg_000.ply"
     feature_path = "../SMPL_python_v.1.1.0/smpl_vert_segmentation.txt"
     mapping_path = "../SMPL_python_v.1.1.0/smpl_vert_segmentation_mapping.pkl"
-    pcd_path = "../samples/FAUST_features/sample.ply"
+    pcd_path = "../samples/FAUST_features/sample-5.ply"
     visualize_mesh_cloud(mesh_path=mesh_path, pcd_path=pcd_path, feature_path=feature_path, 
                          mapping_path=mapping_path, side_by_side=True)
+    
