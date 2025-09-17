@@ -64,8 +64,6 @@ class MPFourier(torch.nn.Module):
         y = y.cos() * np.sqrt(2)
         return y.to(x.dtype)
     
-
-
 def normalize(x, dim=None, eps=1e-4):
     if dim is None:
         dim = list(range(1, x.ndim))
