@@ -29,6 +29,18 @@ def visualize_mesh_cloud(mesh_path, pcd_path, feature_path=None,
         bbox = mesh.get_axis_aligned_bounding_box()
         offset = bbox.get_extent()[0] * 1.2
         pcd.translate([offset, 0, 0])
+    # Define a callback to toggle side_by_side
+    def toggle_side_by_side(action):
+        nonlocal side_by_side
+        side_by_side = not side_by_side
+        bbox = mesh.get_axis_aligned_bounding_box()
+        offset = bbox.get_extent()[0] * 1.2
+        if side_by_side:
+            pcd.translate([offset, 0, 0])
+        else:
+            pcd.translate([-offset, 0, 0])  # Move back to original position
+        vis.remove_geometry("pointcloud")
+        vis.add_geometry("pointcloud", pcd)
     
     # pcd features
     pcd_features = None
@@ -96,7 +108,8 @@ def visualize_mesh_cloud(mesh_path, pcd_path, feature_path=None,
     vis.add_geometry("mesh", mesh)
     vis.add_geometry("pointcloud", pcd)
     vis.show_settings = True  # makes right-hand menu visible
-        
+    vis.add_action("Toggle Side-by-Side", toggle_side_by_side)
+
     # Run the app
     app = o3d.visualization.gui.Application.instance
     app.add_window(vis)

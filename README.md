@@ -39,3 +39,8 @@ python infer.py --pth ../checkpoints/FAUST_features/checkpoint-5.pth --target Ga
 
 
 torchrun --nproc_per_node=1 main.py --blr 5e-7 --batch_size 131072 --accum_iter 2 --output_dir ../checkpoints/FAUST_features --log_dir ../logs/FAUST_features --data_path ../MPI-FAUST/training/registrations/tr_reg_000.ply --feature_path ../SMPL_python_v.1.1.0/smpl_vert_segmentation.txt --feature_interpolation nearest-neighbor --resume ../checkpoints/FAUST_features/checkpoint-25.pth
+
+torchrun --nproc_per_node=1 main.py --blr 5e-7 --batch_size 131072 --accum_iter 2 --output_dir ../checkpoints/spot --log_dir ../logs/spot --data_path ../shapes/datasets--Zbalpha--shapes/snapshots/56ed38231943963314292f76e9d5bc40ee475f52/spot/spot_uv_normalized.obj --texture_path ../shapes/datasets--Zbalpha--shapes/snapshots/56ed38231943963314292f76e9d5bc40ee475f52/spot/spot_by_keenan.png
+
+
+python infer.py --pth ../checkpoints/spot/checkpoint-5.pth --target Gaussian --num-steps 64 --output ../samples/shapes/spot --N 1000000 --texture True
