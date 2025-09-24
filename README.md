@@ -35,7 +35,7 @@ Contact [Biao Zhang](mailto:biao.zhang@kaust.edu.sa) ([@1zb](https://github.com/
 }
 ```
 
-python infer.py --pth ../checkpoints/FAUST_features/checkpoint-5.pth --target Gaussian --num-steps 64 --output ../samples/FAUST_features/ --N 1000000 --feature-dim 1
+python infer.py --pth ../checkpoints/FAUST_features/checkpoint-5.pth --target Gaussian --num-steps 64 --output ../samples/FAUST_features_scaling/ --N 1000000 --feature-dim 1
 
 
 torchrun --nproc_per_node=1 main.py --blr 5e-7 --batch_size 131072 --accum_iter 2 --output_dir ../checkpoints/FAUST_features --log_dir ../logs/FAUST_features --data_path ../MPI-FAUST/training/registrations/tr_reg_000.ply --feature_path ../SMPL_python_v.1.1.0/smpl_vert_segmentation.txt --feature_interpolation nearest-neighbor --resume ../checkpoints/FAUST_features/checkpoint-25.pth
@@ -43,4 +43,8 @@ torchrun --nproc_per_node=1 main.py --blr 5e-7 --batch_size 131072 --accum_iter 
 torchrun --nproc_per_node=1 main.py --blr 5e-7 --batch_size 131072 --accum_iter 2 --output_dir ../checkpoints/spot --log_dir ../logs/spot --data_path ../shapes/datasets--Zbalpha--shapes/snapshots/56ed38231943963314292f76e9d5bc40ee475f52/spot/spot_uv_normalized.obj --texture_path ../shapes/datasets--Zbalpha--shapes/snapshots/56ed38231943963314292f76e9d5bc40ee475f52/spot/spot_by_keenan.png
 
 
-python infer.py --pth ../checkpoints/spot/checkpoint-5.pth --target Gaussian --num-steps 64 --output ../samples/shapes/spot --N 1000000 --texture True
+python infer.py --pth ../checkpoints/spot/checkpoint-5.pth --target Gaussian --num-steps 64 --output ../samples/shapes/spot --N 1000000
+
+torchrun --nproc_per_node=1 main.py --blr 5e-7 --batch_size 131072 --accum_iter 2 --output_dir ../checkpoints/FAUST_vertexid --log_dir ../logs/FAUST_vertexid --data_path ../MPI-FAUST/training/registrations/tr_reg_000.ply --feature_path ../SMPL_python_v.1.1.0/smpl_template_indices.txt --feature_interpolation barycentric
+
+python infer.py --pth ../checkpoints/FAUST_vertexid/checkpoint-5.pth --target Gaussian --num-steps 64 --output ../samples/FAUST_vertexid/ --N 1000000 --feature-dim 1 --max_categorical_features 6889

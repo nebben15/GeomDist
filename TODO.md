@@ -2,5 +2,8 @@
 - categorical features / one-hot / noise added to features
 - continuous features / bounded vs unbounded
 - legend
-- overlay button
-- diffuse spot with color for comparison
+- ✅ overlay button
+- ✅ diffuse spot with color for comparison
+- SMPL id features
+- SMPL geometry features
+- matching visualization

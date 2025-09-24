@@ -387,7 +387,7 @@ class EDMLoss:
 
         self.dist = dist
 
-    def __call__(self, net, inputs, labels=None, augment_pipe=None, init_noise=None):
+    def __call__(self, net, inputs, labels=None, augment_pipe=None, init_noise=None, log_writer=None, global_step=None):
         rnd_normal = torch.randn([inputs.shape[0],], device=inputs.device)
 
         sigma = (rnd_normal * self.P_std + self.P_mean).exp()
@@ -416,4 +416,8 @@ class EDMLoss:
         D_yn = net(y + n, sigma)
 
         loss = weight[:, None] * ((D_yn - y) ** 2)
+
+        # # Log the loss value to TensorBoard
+        # if log_writer is not None and global_step is not None:
+        #     log_writer.add_scalar('Max_Out', mean_loss.item(), global_step)
         return loss.mean()

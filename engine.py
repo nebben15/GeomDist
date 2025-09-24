@@ -12,12 +12,11 @@ from typing import Iterable
 import torch
 import torch.nn.functional as F
 
-from scipy.spatial import cKDTree
-
 import numpy as np
 
 import util.misc as misc
 import util.lr_sched as lr_sched
+import util.features as fe
 
 from torch.autograd import Variable
 from math import exp
@@ -60,85 +59,40 @@ def train_one_epoch(model: torch.nn.Module,
         if obj_file is not None:
             mesh = trimesh.load(obj_file)
 
-            # Normalize the mesh to fit within a unit sphere
-            mesh.vertices -= mesh.vertices.mean(axis=0)  # Center the mesh at the origin
-            max_distance = np.linalg.norm(mesh.vertices, axis=1).max()  # Compute the maximum distance from the origin
-            mesh.vertices /= max_distance  # Scale the vertices to fit within the unit sphere
-            
-            if obj_file.endswith('.obj'):
-                if mode == 'geometry+feature':
-                    # Load features and ensure they match the number of vertices
-                    features = np.loadtxt(data_loader['feature_path'], dtype=np.float32)
-                    features = np.expand_dims(features, axis=1)
-                    if features.shape[0] != len(mesh.vertices):
-                        raise ValueError("Number of features does not match the number of vertices in the .obj file.")
-                    # Concatenate features to vertices
-                    vertices_with_features = np.hstack([mesh.vertices, features])
-                    # Create a new mesh with vertices that include features
-                    mesh_with_features = trimesh.Trimesh(vertices=vertices_with_features, faces=mesh.faces, process=False)
-                    # Sample the surface and interpolate features
-                    samples, face_indices = trimesh.sample.sample_surface(mesh, batch_size)
-                    # Interpolate features for the sampled points
-                    if feature_interpolation == "barycentric":
-                        sampled_features = trimesh.triangles.interpolate_barycentric(
-                            points=samples[:, :3],  # Use only the 3D coordinates for interpolation
-                            triangles=mesh_with_features.vertices[mesh_with_features.faces],
-                            face_indices=face_indices
-                        )
-                    elif feature_interpolation == "nearest-neighbor":
-                        # Build a KDTree for the mesh vertices
-                        vertex_tree = cKDTree(mesh.vertices)
-                        # Query the nearest vertex for each sampled point
-                        _, nearest_vertex_indices = vertex_tree.query(samples[:, :3])
-                        # Assign the features of the nearest vertices to the sampled points
-                        sampled_features = features[nearest_vertex_indices]
-                    # Combine sampled points and interpolated features
-                    samples = np.hstack([samples[:, :3], sampled_features])
-                elif mode == 'geometry+texture' and data_loader['texture_path'] is not None:
-                    img = Image.open(data_loader['texture_path'])
-                    material = trimesh.visual.texture.SimpleMaterial(image=img)
-                    assert mesh.visual.uv is not None
-                    texture = trimesh.visual.TextureVisuals(mesh.visual.uv, image=img, material=material)
-                    mesh = trimesh.Trimesh(vertices=mesh.vertices, faces=mesh.faces, visual=texture, process=False)
-                    samples, _, colors = trimesh.sample.sample_surface(mesh, batch_size, sample_color=True)
-                    colors = colors[:, :3]  # remove alpha
-                    colors = (colors.astype(np.float32) / 255.0 - 0.5) / np.sqrt(1 / 12)  # [-1, 1]
-                    samples = np.concatenate([samples, colors], axis=1)
-                else:
-                    samples, _ = trimesh.sample.sample_surface(mesh, batch_size)
+            # # Normalize the mesh to fit within a unit sphere
+            # mesh.vertices -= mesh.vertices.mean(axis=0)  # Center the mesh at the origin
+            # max_distance = np.linalg.norm(mesh.vertices, axis=1).max()  # Compute the maximum distance from the origin
+            # mesh.vertices /= max_distance  # Scale the vertices to fit within the unit sphere
+            if mode == 'geometry+feature':
+                features, feature_type, max_feature_val = fe.load_features_with_metadata(data_loader['feature_path'])
+                if features.shape[0] != len(mesh.vertices):
+                    raise ValueError("Number of features does not match the number of vertices in the .obj file.")
+                # Concatenate features to vertices
+                vertices_with_features = np.hstack([mesh.vertices, features])
+                # Create a new mesh with vertices that include features
+                mesh_with_features = trimesh.Trimesh(vertices=vertices_with_features, faces=mesh.faces, process=False)
+                # Sample the surface and interpolate features
+                samples, face_indices = trimesh.sample.sample_surface(mesh, batch_size)
+                # Interpolate features for the sampled points
+                sampled_features = fe.interpolate_features_on_samples(
+                    mesh, features, samples, face_indices, interpolation_type=feature_interpolation
+                )
+                # normalize to -1,1
+                sampled_features = (sampled_features.astype(np.float32) / max_feature_val - 0.5) / np.sqrt(1 / 12)  # [-1, 1]
+                # Combine sampled points and interpolated features
+                samples = np.hstack([samples[:, :3], sampled_features])
+            elif mode == 'geometry+texture' and data_loader['texture_path'] is not None:
+                img = Image.open(data_loader['texture_path'])
+                material = trimesh.visual.texture.SimpleMaterial(image=img)
+                assert mesh.visual.uv is not None
+                texture = trimesh.visual.TextureVisuals(mesh.visual.uv, image=img, material=material)
+                mesh = trimesh.Trimesh(vertices=mesh.vertices, faces=mesh.faces, visual=texture, process=False)
+                samples, _, colors = trimesh.sample.sample_surface(mesh, batch_size, sample_color=True)
+                colors = colors[:, :3]  # remove alpha
+                colors = (colors.astype(np.float32) / 255.0 - 0.5) / np.sqrt(1 / 12)  # [-1, 1]
+                samples = np.concatenate([samples, colors], axis=1)
             else:
-                # Handle other formats like .ply
-                if mode == 'geometry+feature':
-                    # Load features and ensure they match the number of vertices
-                    features = np.loadtxt(data_loader['feature_path'], dtype=np.float32)
-                    features = np.expand_dims(features, axis=1)
-                    if features.shape[0] != len(mesh.vertices):
-                        raise ValueError("Number of features does not match the number of vertices in the .obj file.")
-                    # Concatenate features to vertices
-                    vertices_with_features = np.hstack([mesh.vertices, features])
-                    # Create a new mesh with vertices that include features
-                    mesh_with_features = trimesh.Trimesh(vertices=vertices_with_features, faces=mesh.faces, process=False)
-                    # Sample the surface and interpolate features
-                    samples, face_indices = trimesh.sample.sample_surface(mesh, batch_size)
-                    # Interpolate features for the sampled points
-                    if feature_interpolation == "barycentric":
-                        sampled_features = trimesh.triangles.interpolate_barycentric(
-                            points=samples[:, :3],  # Use only the 3D coordinates for interpolation
-                            triangles=mesh_with_features.vertices[mesh_with_features.faces],
-                            face_indices=face_indices
-                        )
-                    elif feature_interpolation == "nearest-neighbor":
-                        # Build a KDTree for the mesh vertices
-                        vertex_tree = cKDTree(mesh.vertices)
-                        # Query the nearest vertex for each sampled point
-                        _, nearest_vertex_indices = vertex_tree.query(samples[:, :3])
-                        # Assign the features of the nearest vertices to the sampled points
-                        sampled_features = features[nearest_vertex_indices]
-                    # Combine sampled points and interpolated features
-                    samples = np.hstack([samples[:, :3], sampled_features])
-                else:
-                    samples, _ = trimesh.sample.sample_surface(mesh, batch_size)
-
+                samples, _ = trimesh.sample.sample_surface(mesh, batch_size)
         else:
             if data_loader['primitive'] == 'sphere':
                 n = torch.randn(2048*64*4*64, 3)

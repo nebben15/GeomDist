@@ -124,12 +124,12 @@ def get_feature_dim(path):
         raise ValueError(f"The file {path} is empty.")
 
     # Get the feature dimension from the first row
-    first_row = lines[0].strip().split()
+    first_row = lines[1].strip().split()
     feature_dim = len(first_row)
 
     # Check that all rows have the same number of columns
     for i, line in enumerate(lines):
-        if len(line.strip().split()) != feature_dim:
+        if i != 0 and len(line.strip().split()) != feature_dim:
             raise ValueError(f"Inconsistent feature dimensions in file {path} at line {i + 1}.")
 
     return feature_dim

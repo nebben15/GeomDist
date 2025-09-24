@@ -35,6 +35,7 @@ parser.add_argument('--output', required=True, type=str)
 parser.add_argument('--intermediate', action='store_true')
 parser.add_argument('--depth', default=6, type=int)
 parser.add_argument('--feature-dim', default=0, type=int, help='Dimensionality of additional features')
+parser.add_argument('--max_categorical_feature', default=1, type=int, help="Maximum value of categorical features. Used for scaling.")
 parser.set_defaults(texture=False)
 parser.set_defaults(intermediate=False)
 
@@ -101,6 +102,7 @@ elif mode == 'geometry+feature':
     sample = sample.detach().cpu().numpy()
     vertices = sample[:, :3].astype(np.float32)
     features = sample[:, 3:].astype(np.float32)
+    features = (features * np.sqrt(1/12) + 0.5) * args.max_categorical_feature
     pcd_t = o3d.t.geometry.PointCloud()
     # Positions must be set this way
     pcd_t.point.positions = o3d.core.Tensor(vertices, dtype=o3d.core.Dtype.Float32)
