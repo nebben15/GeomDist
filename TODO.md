@@ -7,3 +7,4 @@
 - SMPL id features
 - SMPL geometry features
 - matching visualization
+- figure out way to back up data/checkpoints etc.

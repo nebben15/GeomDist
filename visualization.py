@@ -111,15 +111,16 @@ def visualize_mesh_cloud(mesh_path, pcd_path, pcd2_path=None, feature_path=None,
     mesh = o3d.io.read_triangle_mesh(mesh_path)
     mesh.compute_vertex_normals()
     pcd = o3d.io.read_point_cloud(pcd_path)
-    pcd_tensor_api= o3d.t.io.read_point_cloud(pcd_path)
+    pcd_tensor_api = o3d.t.io.read_point_cloud(pcd_path)
     pcd2 = None
     if pcd2_path:
         pcd2 = o3d.io.read_point_cloud(pcd2_path)
+        pcd2_tensor_api = o3d.t.io.read_point_cloud(pcd2_path)
 
     # Optionally move the point cloud to the side
     if side_by_side:
         bbox = mesh.get_axis_aligned_bounding_box()
-        offset = bbox.get_extent()[0] * 1.2
+        offset = bbox.get_extent()[0] * 1.5
         pcd.translate([offset, 0, 0])
         if pcd2:
             pcd2.translate([2*offset, 0, 0])
@@ -128,7 +129,7 @@ def visualize_mesh_cloud(mesh_path, pcd_path, pcd2_path=None, feature_path=None,
         nonlocal side_by_side
         side_by_side = not side_by_side
         bbox = mesh.get_axis_aligned_bounding_box()
-        offset = bbox.get_extent()[0] * 1.2
+        offset = bbox.get_extent()[0] * 1.5
         if side_by_side:
             pcd.translate([offset, 0, 0])
         else:
@@ -140,6 +141,9 @@ def visualize_mesh_cloud(mesh_path, pcd_path, pcd2_path=None, feature_path=None,
     pcd_features = None
     if 'features' in pcd_tensor_api.point:
         pcd_features = pcd_tensor_api.point['features'].numpy()
+    pcd2_feaures = None
+    if pcd2_tensor_api is not None and 'features' in pcd2_tensor_api.point:
+        pcd2_feaures = pcd2_tensor_api.point['features'].numpy()
 
     # mesh features
     mesh_features = None
@@ -181,6 +185,8 @@ def visualize_mesh_cloud(mesh_path, pcd_path, pcd2_path=None, feature_path=None,
     if pcd_features is not None:
         print(np.max(pcd_features), np.min(pcd_features))
         color_pcd(pcd=pcd, pcd_features=pcd_features, mesh_features=mesh_features, mapping=mapping, color_mode=color_mode)
+    if pcd2_feaures is not None:
+        color_pcd(pcd=pcd2, pcd_features=pcd2_feaures, mesh_features=mesh_features, mapping=mapping, color_mode=color_mode)
 
     # Legend
     print(mapping)
@@ -204,16 +210,17 @@ if __name__ == "__main__":
     mapping_path = None
     feature_path = None
     pcd2_path = None
+    color_mode = 'categorical'
     ### loong
     # mesh_path = "../shapes/datasets--Zbalpha--shapes/snapshots/56ed38231943963314292f76e9d5bc40ee475f52/loong.obj"
     # pcd2_path = "../samples/shapes/loong/sample.ply"
     # pcd_path = "../samples/shapes/loong/self_trained_5_epochs.ply"
     ### spot
-    #mesh_path = "../shapes/datasets--Zbalpha--shapes/snapshots/56ed38231943963314292f76e9d5bc40ee475f52/spot/spot_uv_normalized.obj"
-    #pcd_path = "../samples/shapes/spot_color/sample_999.ply"
+    mesh_path = "../shapes/datasets--Zbalpha--shapes/snapshots/56ed38231943963314292f76e9d5bc40ee475f52/spot/spot_uv_normalized.obj"
+    #pcd_path = "../samples/shapes/spot_color/sample_45.ply"
     #pcd_path = "../samples/shapes/spot/sample_5.ply"
-    #pcd2_path = "../samples/shapes/spot/sample_20.ply"
-    #pcd2_path = "../samples/shapes/spot_color/self_trained_5_epochs.ply"
+    pcd_path = "../samples/shapes/spot_color/self_trained_45_epochs.ply"
+    pcd2_path = "../samples/shapes/spot/sample_20.ply"
     ### FAUST
     # mesh_path = "../MPI-FAUST/training/registrations/tr_reg_000.ply"
     # pcd_path = "../samples/FAUST/sample.ply"
@@ -222,12 +229,13 @@ if __name__ == "__main__":
     # feature_path = "../SMPL_python_v.1.1.0/smpl_vert_segmentation.txt"
     # mapping_path = "../SMPL_python_v.1.1.0/smpl_vert_segmentation_mapping.pkl"
     # pcd_path = "../samples/FAUST_scaling/sample-5.ply"
+    # pcd2_path = "../samples/FAUST_scaling_depth8/sample-20.ply"
     #pcd_path = "../samples/FAUST_wrong_scaling/sample-5.ply"
     ### FAUST with vertex-ids
-    mesh_path = "../MPI-FAUST/training/registrations/tr_reg_000.ply"
-    feature_path = "../SMPL_python_v.1.1.0/smpl_template_indices.txt"
-    pcd_path = "../samples/FAUST_vertexid/sample-30.ply"
+    # color_mode = 'continuous'
+    # mesh_path = "../MPI-FAUST/training/registrations/tr_reg_000.ply"
+    # feature_path = "../SMPL_python_v.1.1.0/smpl_template_indices.txt"
+    # pcd_path = "../samples/FAUST_vertexid/sample-30.ply"
     visualize_mesh_cloud(mesh_path=mesh_path, pcd_path=pcd_path, pcd2_path=pcd2_path, 
                          feature_path=feature_path, mapping_path=mapping_path, 
-                         side_by_side=True, color_mode='continuous')
-    
+                         side_by_side=True, color_mode=color_mode)
