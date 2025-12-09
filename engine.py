@@ -64,21 +64,23 @@ def train_one_epoch(model: torch.nn.Module,
             # max_distance = np.linalg.norm(mesh.vertices, axis=1).max()  # Compute the maximum distance from the origin
             # mesh.vertices /= max_distance  # Scale the vertices to fit within the unit sphere
             if mode == 'geometry+feature':
-                features, feature_type, max_feature_val = fe.load_features_with_metadata(data_loader['feature_path'])
+                features, max_feature_val, feature_dim = fe.load_features_with_metadata(data_loader['feature_path'])
+                print(features.shape, max_feature_val.shape)
                 if features.shape[0] != len(mesh.vertices):
                     raise ValueError("Number of features does not match the number of vertices in the .obj file.")
                 # Concatenate features to vertices
-                vertices_with_features = np.hstack([mesh.vertices, features])
+                #vertices_with_features = np.hstack([mesh.vertices, features])
                 # Create a new mesh with vertices that include features
-                mesh_with_features = trimesh.Trimesh(vertices=vertices_with_features, faces=mesh.faces, process=False)
+                #mesh_with_features = trimesh.Trimesh(vertices=vertices_with_features, faces=mesh.faces, process=False)
                 # Sample the surface and interpolate features
                 samples, face_indices = trimesh.sample.sample_surface(mesh, batch_size)
                 # Interpolate features for the sampled points
                 sampled_features = fe.interpolate_features_on_samples(
                     mesh, features, samples, face_indices, interpolation_type=feature_interpolation
                 )
-                # normalize to -1,1
-                sampled_features = (sampled_features.astype(np.float32) / max_feature_val - 0.5) / np.sqrt(1 / 12)  # [-1, 1]
+                # Normalize features using centralized utility (signed/unsigned aware)
+                signed_mask = (np.min(features, axis=0) < 0)
+                sampled_features = fe.normalize_features(sampled_features, max_feature_val, signed_mask=signed_mask)
                 # Combine sampled points and interpolated features
                 samples = np.hstack([samples[:, :3], sampled_features])
             elif mode == 'geometry+texture' and data_loader['texture_path'] is not None:

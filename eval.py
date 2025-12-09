@@ -10,7 +10,8 @@ parser.add_argument('--reference', required=True, type=str)
 parser.add_argument('--scale', required=True, type=str)
 args = parser.parse_args()
 
-scale = np.load(args.scale)
+#scale = np.load(args.scale)
+scale = 1
 
 prediction = trimesh.load(args.ply).vertices * scale
 reference = trimesh.load(args.reference).vertices * scale

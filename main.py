@@ -14,6 +14,7 @@ torch.set_num_threads(10)
 import util.lr_decay as lrd
 import util.misc as misc
 from util.misc import NativeScalerWithGradNormCount as NativeScaler
+from util.features import load_features_with_metadata
 
 import models as models
 from models import EDMLoss
@@ -103,37 +104,6 @@ def get_args_parser():
 
     return parser
 
-def get_feature_dim(path):
-    """
-    Get the feature dimension from a .txt file.
-
-    Args:
-        path (str): Path to the .txt file.
-
-    Returns:
-        int: The feature dimension (number of columns).
-
-    Raises:
-        ValueError: If the file is not well-formed (rows have inconsistent lengths).
-    """
-    with open(path, 'r') as file:
-        lines = file.readlines()
-
-    # Ensure the file is not empty
-    if not lines:
-        raise ValueError(f"The file {path} is empty.")
-
-    # Get the feature dimension from the first row
-    first_row = lines[1].strip().split()
-    feature_dim = len(first_row)
-
-    # Check that all rows have the same number of columns
-    for i, line in enumerate(lines):
-        if i != 0 and len(line.strip().split()) != feature_dim:
-            raise ValueError(f"Inconsistent feature dimensions in file {path} at line {i + 1}.")
-
-    return feature_dim
-
 def main(args):
 
     # os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
@@ -212,7 +182,8 @@ def main(args):
     criterion = EDMLoss(dist=args.target)
     channels = 3
     if mode == "geometry+feature":
-        channels += get_feature_dim(path=args.feature_path)
+        _, _, feat_dim = load_features_with_metadata(file_path=args.feature_path)
+        channels += feat_dim
     elif mode == "geometry+texture":
         channels = 6
     model = models.__dict__[args.model](channels=channels, depth=args.depth)

@@ -108,11 +108,17 @@ def visualize_mesh_cloud(mesh_path, pcd_path, pcd2_path=None, feature_path=None,
     o3d.visualization.gui.Application.instance.initialize()
     
     # Load mesh and point cloud
-    mesh = o3d.io.read_triangle_mesh(mesh_path)
-    mesh.compute_vertex_normals()
-    pcd = o3d.io.read_point_cloud(pcd_path)
-    pcd_tensor_api = o3d.t.io.read_point_cloud(pcd_path)
+    mesh = None
+    if mesh_path:
+        mesh = o3d.io.read_triangle_mesh(mesh_path)
+        mesh.compute_vertex_normals()
+    pcd = None
+    pcd_tensor_api = None
+    if pcd_path:
+        pcd = o3d.io.read_point_cloud(pcd_path)
+        pcd_tensor_api = o3d.t.io.read_point_cloud(pcd_path)
     pcd2 = None
+    pcd2_tensor_api = None
     if pcd2_path:
         pcd2 = o3d.io.read_point_cloud(pcd2_path)
         pcd2_tensor_api = o3d.t.io.read_point_cloud(pcd2_path)
@@ -185,8 +191,16 @@ def visualize_mesh_cloud(mesh_path, pcd_path, pcd2_path=None, feature_path=None,
     if pcd_features is not None:
         print(np.max(pcd_features), np.min(pcd_features))
         color_pcd(pcd=pcd, pcd_features=pcd_features, mesh_features=mesh_features, mapping=mapping, color_mode=color_mode)
+    else:
+        # Set all points to gray if no features are present
+        gray_color = np.array([[0.5, 0.5, 0.5]] * np.asarray(pcd.points).shape[0])
+        pcd.colors = o3d.utility.Vector3dVector(gray_color)
     if pcd2_feaures is not None:
         color_pcd(pcd=pcd2, pcd_features=pcd2_feaures, mesh_features=mesh_features, mapping=mapping, color_mode=color_mode)
+    else:
+        # Set all points to gray if no features are present
+        gray_color = np.array([[0.5, 0.5, 0.5]] * np.asarray(pcd.points).shape[0])
+        pcd.colors = o3d.utility.Vector3dVector(gray_color)
 
     # Legend
     print(mapping)
@@ -212,15 +226,15 @@ if __name__ == "__main__":
     pcd2_path = None
     color_mode = 'categorical'
     ### loong
-    # mesh_path = "../shapes/datasets--Zbalpha--shapes/snapshots/56ed38231943963314292f76e9d5bc40ee475f52/loong.obj"
-    # pcd2_path = "../samples/shapes/loong/sample.ply"
-    # pcd_path = "../samples/shapes/loong/self_trained_5_epochs.ply"
+    mesh_path = "../data/shapes/wukong.obj"
+    pcd_path = "../samples/shapes/wukong/sample-15.ply"
+    pcd2_path = "../samples/shapes/wukong/sample-10.ply"
     ### spot
-    mesh_path = "../shapes/datasets--Zbalpha--shapes/snapshots/56ed38231943963314292f76e9d5bc40ee475f52/spot/spot_uv_normalized.obj"
+    #mesh_path = "../data/shapes/spot/spot_uv_normalized.obj"
+    # pcd_path = "../samples/shapes/spot_color/self_trained_45_epochs.ply"
+    # pcd2_path = "../samples/shapes/spot_color/self_trained_200_epochs.ply"
     #pcd_path = "../samples/shapes/spot_color/sample_45.ply"
     #pcd_path = "../samples/shapes/spot/sample_5.ply"
-    pcd_path = "../samples/shapes/spot_color/self_trained_45_epochs.ply"
-    pcd2_path = "../samples/shapes/spot/sample_20.ply"
     ### FAUST
     # mesh_path = "../MPI-FAUST/training/registrations/tr_reg_000.ply"
     # pcd_path = "../samples/FAUST/sample.ply"
