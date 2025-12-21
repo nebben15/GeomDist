@@ -37,8 +37,10 @@ parser.add_argument('--output', required=True, type=str)
 parser.add_argument('--intermediate', action='store_true')
 parser.add_argument('--depth', default=6, type=int)
 parser.add_argument('--feature-file', default=None, type=str, help='Path to feature TXT with header (FEATURES_COUNT/DIM/MAX_ABS) to set feature dim and de-normalize outputs')
+parser.add_argument('--ascii', action='store_true', help='Write ASCII PLY when supported (Open3D)')
 parser.set_defaults(texture=False)
 parser.set_defaults(intermediate=False)
+parser.set_defaults(ascii=False)
 
 args = parser.parse_args()
 
@@ -88,19 +90,29 @@ else:
 sample, intermediate_steps = model.sample(batch_seeds=noise, num_steps=args.num_steps)
 
 if mode == 'geometry+texture':
-    sample = sample.detach().cpu().numpy()
-    vertices, colors = sample[:, :3], sample[:, 3:]
-    colors = (colors * np.sqrt(1/12) + 0.5) * 255.0
-    colors = np.concatenate([colors, np.ones_like(colors[:, 0:1]) * 255.0], axis=1).astype(np.uint8) # alpha channel
-    trimesh.PointCloud(vertices, colors).export(os.path.join(args.output, f'{base_name}.ply'))
+    # Use Open3D: points + RGB colors. Convert to float RGB in [0,1].
+    sample_np = sample.detach().cpu().numpy()
+    vertices = sample_np[:, :3].astype(np.float32)
+    colors = sample_np[:, 3:6].astype(np.float32)
+    # De-normalize colors similarly to prior implementation, then map to 0..1
+    colors_255 = (colors * np.sqrt(1/12) + 0.5) * 255.0
+    colors_f = (colors_255 / 255.0).clip(0.0, 1.0).astype(np.float32)
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(vertices)
+    pcd.colors = o3d.utility.Vector3dVector(colors_f)
+    o3d.io.write_point_cloud(os.path.join(args.output, f'{base_name}.ply'), pcd, write_ascii=bool(args.ascii))
 
     if args.intermediate:
         for step_idx, s in enumerate(intermediate_steps):
-            vertices, colors = s[:, :3], s[:, 3:]
-            colors = (colors * np.sqrt(1/12) + 0.5) * 255.0
-            colors = np.concatenate([colors, np.ones_like(colors[:, 0:1]) * 255.0], axis=1).astype(np.uint8) # alpha channel
-
-            trimesh.PointCloud(vertices, colors).export(os.path.join(args.output, f'{base_name}_i{step_idx:03d}.ply'))
+            s_np = s.detach().cpu().numpy()
+            vertices_i = s_np[:, :3].astype(np.float32)
+            colors_i = s_np[:, 3:6].astype(np.float32)
+            colors_i_255 = (colors_i * np.sqrt(1/12) + 0.5) * 255.0
+            colors_i_f = (colors_i_255 / 255.0).clip(0.0, 1.0).astype(np.float32)
+            pcd_i = o3d.geometry.PointCloud()
+            pcd_i.points = o3d.utility.Vector3dVector(vertices_i)
+            pcd_i.colors = o3d.utility.Vector3dVector(colors_i_f)
+            o3d.io.write_point_cloud(os.path.join(args.output, f'{base_name}_i{step_idx:03d}.ply'), pcd_i, write_ascii=bool(args.ascii))
 
 elif mode == 'geometry+feature':
     sample = sample.detach().cpu().numpy()
@@ -122,7 +134,7 @@ elif mode == 'geometry+feature':
         tcol = o3d.core.Tensor(col, dtype=o3d.core.Dtype.Float32)
         pcd_t.point[attr_name] = tcol
     # Write to PLY, ensuring tensor attributes are included
-    o3d.t.io.write_point_cloud(os.path.join(args.output, f'{base_name}.ply'), pcd_t, write_ascii=False)
+    o3d.t.io.write_point_cloud(os.path.join(args.output, f'{base_name}.ply'), pcd_t, write_ascii=bool(args.ascii))
 
     if args.intermediate:
         for step_idx, s in enumerate(intermediate_steps):
@@ -142,10 +154,17 @@ elif mode == 'geometry+feature':
                 tcol = o3d.core.Tensor(col, dtype=o3d.core.Dtype.Float32)
                 pcd_t.point[attr_name] = tcol
             # Write to PLY, ensuring tensor attributes are included
-            o3d.t.io.write_point_cloud(os.path.join(args.output, f'{base_name}_i{step_idx:03d}.ply'), pcd_t, write_ascii=False)
+            o3d.t.io.write_point_cloud(os.path.join(args.output, f'{base_name}_i{step_idx:03d}.ply'), pcd_t, write_ascii=bool(args.ascii))
 else:
-    trimesh.PointCloud(sample.detach().cpu().numpy()).export(os.path.join(args.output, f'{base_name}.ply'))
+    # Geometry only: write points with Open3D
+    pts = sample.detach().cpu().numpy().astype(np.float32)
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(pts)
+    o3d.io.write_point_cloud(os.path.join(args.output, f'{base_name}.ply'), pcd, write_ascii=bool(args.ascii))
 
     if args.intermediate:
         for step_idx, s in enumerate(intermediate_steps):
-            trimesh.PointCloud(s).export(os.path.join(args.output, f'{base_name}_i{step_idx:03d}.ply'))
+            s_np = s.detach().cpu().numpy().astype(np.float32)
+            pcd_i = o3d.geometry.PointCloud()
+            pcd_i.points = o3d.utility.Vector3dVector(s_np)
+            o3d.io.write_point_cloud(os.path.join(args.output, f'{base_name}_i{step_idx:03d}.ply'), pcd_i, write_ascii=bool(args.ascii))
