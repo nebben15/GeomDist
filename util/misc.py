@@ -228,8 +228,26 @@ def init_distributed_mode(args):
         args.world_size = int(os.environ['WORLD_SIZE'])
         args.gpu = int(os.environ['LOCAL_RANK'])
     elif 'SLURM_PROCID' in os.environ:
+        # SLURM environment: derive rank, world size and local GPU
         args.rank = int(os.environ['SLURM_PROCID'])
-        args.gpu = args.rank % torch.cuda.device_count()
+        # Number of tasks launched by SLURM; default to 1 if not set
+        args.world_size = int(os.environ.get('SLURM_NTASKS', '1'))
+        # Prefer SLURM_LOCALID when available; otherwise modulo device count
+        local_id = os.environ.get('SLURM_LOCALID')
+        if local_id is not None:
+            args.gpu = int(local_id)
+        else:
+            args.gpu = args.rank % max(1, torch.cuda.device_count())
+        # Propagate common envs for env:// init if needed
+        os.environ['LOCAL_RANK'] = str(args.gpu)
+        os.environ['RANK'] = str(args.rank)
+        os.environ['WORLD_SIZE'] = str(args.world_size)
+        # If running single task, don't use DDP
+        if args.world_size == 1:
+            print('SLURM detected with a single task — not using distributed mode')
+            setup_for_distributed(is_master=True)
+            args.distributed = False
+            return
     else:
         print('Not using distributed mode')
         setup_for_distributed(is_master=True)  # hack
@@ -240,6 +258,10 @@ def init_distributed_mode(args):
 
     torch.cuda.set_device(args.gpu)
     args.dist_backend = 'nccl'
+    # Fallback for env:// when MASTER_ADDR/MASTER_PORT are missing (e.g., single-node runs)
+    if args.dist_url == 'env://':
+        os.environ.setdefault('MASTER_ADDR', '127.0.0.1')
+        os.environ.setdefault('MASTER_PORT', '29500')
     print('| distributed init (rank {}): {}, gpu {}'.format(
         args.rank, args.dist_url, args.gpu), flush=True)
     torch.distributed.init_process_group(backend=args.dist_backend, init_method=args.dist_url,
