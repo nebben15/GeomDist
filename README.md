@@ -60,6 +60,6 @@ torchrun --nproc_per_node=1 main.py --blr 5e-7 --batch_size 131072 --accum_iter 
 
 python infer.py --pth "/home/ben/Desktop/LRZ Sync+Share/Thesis/Data/checkpoints/FAUST_smpl_template/checkpoint-60.pth" --target Gaussian --num-steps 64 --output "/home/ben/Desktop/LRZ Sync+Share/Thesis/Data/samples/FAUST_smpl_template_000/ --N 1000000 --feature-dim 3 
 
-python infer.py --pth "/home/ben/Desktop/LRZ Sync+Share/Thesis/Data/checkpoints/FAUST_smpl_template_000/checkpoint-5.pth" --target Gaussian --num-steps 64 --output "/home/ben/Desktop/LRZ Sync+Share/Thesis/Data/samples/FAUST_smpl_template_000/" --N 10000 --feature-file "/home/ben/Desktop/LRZ Sync+Share/Thesis/Data/data/SMPL_python_v.1.1.0/smpl_template_vertices_male.txt"
+python infer.py --pth "/home/ben/Desktop/LRZ Sync+Share/Thesis/Data/checkpoints/FAUST_smpl_template_000/checkpoint-999.pth" --target Gaussian --num-steps 64 --output "/home/ben/Desktop/LRZ Sync+Share/Thesis/Data/samples/FAUST_smpl_template_000/" --N 100000 --feature-file "/home/ben/Desktop/LRZ Sync+Share/Thesis/Data/data/SMPL_python_v.1.1.0/smpl_template_vertices_male.txt"
 
 torchrun --nproc_per_node=1 main.py --blr 5e-7 --output_dir "/home/stud/klb/storage/slurm/checkpoints/FAUST_smpl_template_007" --log_dir "/home/stud/klb/storage/slurm/logs/FAUST_smpl_template_007" --data_path "/home/stud/klb/storage/slurm/MPI-FAUST/training/registrations/tr_reg_007.ply" --feature_path "/home/stud/klb/storage/slurm/SMPL_python_v.1.1.0/smpl_template_vertices_male.txt" --feature_interpolation nearest-neighbor 
